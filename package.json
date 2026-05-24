@@ -1,0 +1,16 @@
+{
+  "name": "figure-image-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local web UI for Figure GPT-Image-2 generation and editing",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "js-yaml": "^4.1.0",
+    "multer": "^1.4.5-lts.1"
+  }
+}

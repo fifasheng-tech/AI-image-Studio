@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Figure Image Studio</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="top-bar glass">
+        <div class="top-bar-left">
+          <div class="app-avatar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          </div>
+          <span class="app-logo">Image Studio</span>
+        </div>
+        <div class="top-bar-right">
+          <div class="status-dot" id="statusDot" title="检查服务中...">
+            <span class="dot"></span>
+          </div>
+          <div class="user-avatar" id="userAvatar" title="用户">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+        </div>
+      </header>
+
+      <main class="conversation-area" id="conversationArea">
+        <div class="welcome-section" id="welcomeSection">
+          <div class="welcome-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          </div>
+          <h1 class="welcome-title">Image Studio</h1>
+          <p class="welcome-subtitle">描述你想要的画面，AI 帮你生成</p>
+          <div class="welcome-hints">
+            <span class="hint-chip">文字生图</span>
+            <span class="hint-chip">图片编辑</span>
+            <span class="hint-chip">风格参考</span>
+          </div>
+        </div>
+        <div class="results-thread" id="resultsThread"></div>
+      </main>
+
+      <div class="composer glass" id="composer">
+        <div class="composer-attachments" id="composerAttachments"></div>
+        <div class="composer-input-row">
+          <textarea id="promptInput" rows="1" placeholder="描述画面内容、风格与比例，也可选择模板或上传参考图" autocomplete="off"></textarea>
+          <button type="button" class="composer-send" id="submitBtn" title="生成图片">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          </button>
+        </div>
+        <div class="composer-toolbar">
+          <button type="button" class="toolbar-btn" id="uploadToolBtn" title="上传参考图">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+            <span class="toolbar-label">参考图</span>
+          </button>
+          <button type="button" class="toolbar-btn" id="templatesToolBtn" title="模板">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            <span class="toolbar-label">模板</span>
+          </button>
+          <button type="button" class="toolbar-btn" id="wandToolBtn" title="AI 优化 Prompt">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l1.09 3.26L16.36 6l-3.27 1.09L12 10.36l-1.09-3.27L7.64 6l3.27-1.09L12 2z"/><path d="M5 15l.54 1.63L7.18 17l-1.64.54L5 19.18l-.54-1.64L2.82 17l1.64-.54L5 15z"/><path d="M19 11l.54 1.63L21.18 13l-1.64.54L19 15.18l-.54-1.64L16.82 13l1.64-.54L19 11z"/></svg>
+            <span class="toolbar-label">优化</span>
+          </button>
+          <button type="button" class="toolbar-btn" id="settingsToolBtn" title="生成设置">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+            <span class="toolbar-label">设置</span>
+          </button>
+        </div>
+        <input type="file" id="imagesInput" accept="image/*" multiple hidden />
+        <input type="file" id="maskInput" accept="image/*" hidden />
+      </div>
+
+      <div class="command-palette glass" id="commandPalette">
+        <div class="command-list" id="commandList"></div>
+      </div>
+
+      <div class="overlay-backdrop" id="overlayBackdrop"></div>
+
+      <div class="drawer glass" id="uploadDrawer" data-drawer="upload">
+        <div class="drawer-header">
+          <h3>参考图 / 原图</h3>
+          <button type="button" class="drawer-close" data-close>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="drawer-body">
+          <div class="upload-zone" id="imagesDropZone">
+            <div class="upload-zone-inner" id="imagesDropSurface">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              <span class="upload-zone-title">拖拽图片到这里，或点击选择</span>
+              <span class="upload-zone-sub">支持多张参考图，适合图生图、风格参考</span>
+              <button type="button" class="btn-secondary btn-sm" id="pickImagesBtn">选择图片</button>
+            </div>
+          </div>
+          <div class="thumb-strip" id="imagesThumbGrid"></div>
+          <div class="upload-divider"></div>
+          <div class="upload-section-label">Mask 蒙版（可选，局部编辑时使用）</div>
+          <div class="upload-zone compact" id="maskDropZone">
+            <div class="upload-zone-inner" id="maskDropSurface">
+              <span class="upload-zone-title">拖拽 Mask 到这里</span>
+              <button type="button" class="btn-secondary btn-sm" id="pickMaskBtn">选择 Mask</button>
+            </div>
+          </div>
+          <div class="thumb-strip" id="maskThumbWrap"></div>
+        </div>
+      </div>
+
+      <div class="drawer glass" id="templatesDrawer" data-drawer="templates">
+        <div class="drawer-header">
+          <h3>常用模板</h3>
+          <button type="button" class="drawer-close" data-close>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="drawer-body" id="templatesBody">
+          <div class="muted">加载中...</div>
+        </div>
+      </div>
+
+      <div class="drawer glass" id="settingsDrawer" data-drawer="settings">
+        <div class="drawer-header">
+          <h3>生成设置</h3>
+          <button type="button" class="drawer-close" data-close>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="drawer-body">
+          <label class="setting-field">
+            <span>图片模型</span>
+            <select id="modelSelect">
+              <option value="gpt-image-2" selected>gpt-image-2</option>
+            </select>
+          </label>
+          <label class="setting-field">
+            <span>输出尺寸</span>
+            <select id="sizeSelect">
+              <option value="1536x1024" selected>1536 x 1024 — 3:2 横图</option>
+              <option value="1024x1536">1024 x 1536 — 2:3 竖图</option>
+              <option value="1024x1024">1024 x 1024 — 1:1 方图</option>
+              <option value="2048x1536">2048 x 1536 — 4:3 横图 2K</option>
+              <option value="1536x2048">1536 x 2048 — 3:4 竖图 2K</option>
+              <option value="2048x2048">2048 x 2048 — 1:1 方图 2K</option>
+              <option value="3840x2160">3840 x 2160 — 16:9 横图 4K</option>
+              <option value="2160x3840">2160 x 3840 — 9:16 竖图 4K</option>
+              <option value="4096x4096">4096 x 4096 — 1:1 方图 4K</option>
+            </select>
+          </label>
+          <label class="setting-field">
+            <span>质量</span>
+            <select id="qualitySelect">
+              <option value="high" selected>high</option>
+              <option value="medium">medium</option>
+              <option value="low">low</option>
+            </select>
+          </label>
+          <label class="setting-field">
+            <span>背景</span>
+            <select id="backgroundSelect">
+              <option value="opaque" selected>opaque（不透明）</option>
+              <option value="transparent">transparent（透明）</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="drawer glass" id="assistantDrawer" data-drawer="assistant">
+        <div class="drawer-header">
+          <h3>Prompt 助手</h3>
+          <button type="button" class="drawer-close" data-close>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="drawer-body">
+          <label class="setting-field">
+            <span>分类</span>
+            <select id="assistCategory">
+              <option value="照片修复">照片修复</option>
+              <option value="电商主图">电商主图</option>
+              <option value="海报封面">海报封面</option>
+              <option value="创意生图">创意生图</option>
+            </select>
+          </label>
+          <label class="setting-field">
+            <span>主题 / 主体</span>
+            <input id="assistSubject" type="text" placeholder="例如：儿童旧照修复 / 护手霜电商图" />
+          </label>
+          <label class="setting-field">
+            <span>用途</span>
+            <input id="assistTargetUse" type="text" placeholder="例如：小红书封面 / 电商主图" />
+          </label>
+          <label class="setting-field">
+            <span>风格</span>
+            <input id="assistStyle" type="text" placeholder="例如：真实摄影质感 / 高级商业视觉" />
+          </label>
+          <label class="setting-field">
+            <span>额外约束</span>
+            <textarea id="assistConstraints" rows="3" placeholder="例如：保留人物身份；不要 AI 绘画感"></textarea>
+          </label>
+          <div class="drawer-actions">
+            <button type="button" class="btn-primary" id="generatePromptBtn">生成 Prompt</button>
+            <button type="button" class="btn-secondary" id="applyAssistPromptBtn">填入主输入框</button>
+          </div>
+          <label class="setting-field">
+            <span>生成结果</span>
+            <textarea id="assistOutput" rows="5" placeholder="AI 生成的 prompt 会显示在这里" readonly></textarea>
+          </label>
+        </div>
+      </div>
+
+      <div class="debug-panel glass" id="debugPanel">
+        <div class="drawer-header">
+          <h3>调试日志</h3>
+          <button type="button" class="drawer-close" id="debugCloseBtn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="drawer-body">
+          <button type="button" class="btn-secondary btn-sm" id="refreshLogsBtn">刷新日志</button>
+          <pre class="log-output" id="logOutput">点击刷新加载日志</pre>
+        </div>
+      </div>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
