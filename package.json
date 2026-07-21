@@ -6,7 +6,10 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "test": "node --test tests/",
+    "test:single": "node --test",
+    "sync:youmind": "node scripts/sync-youmind-prompts.js"
   },
   "dependencies": {
     "express": "^4.21.2",

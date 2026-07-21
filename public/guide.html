@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Image Studio Docs</title>
+    <script>
+      (() => {
+        try {
+          const storedTheme = localStorage.getItem('imageStudioTheme');
+          const theme = storedTheme === 'dark' || storedTheme === 'light'
+            ? storedTheme
+            : (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          document.documentElement.dataset.theme = theme;
+          document.documentElement.style.colorScheme = theme;
+        } catch (_) {
+          document.documentElement.dataset.theme = 'light';
+        }
+      })();
+    </script>
+    <style>
+      :root { color-scheme: light; --bg: #f7f8fb; --panel: #ffffff; --line: rgba(0,0,0,.08); --text: #17191f; --muted: #5f6876; --accent: #007aff; --header-bg: rgba(247,248,251,.92); --nav-active: rgba(0,122,255,.08); --callout: rgba(255,255,255,.72); --kicker: #7f8998; }
+      :root[data-theme="dark"] { color-scheme: dark; --bg: #0c0d0a; --panel: #141511; --line: rgba(255,255,255,.08); --text: #f4f4f1; --muted: #a6a6a0; --accent: #0a84ff; --header-bg: rgba(12,13,10,.92); --nav-active: rgba(255,255,255,.08); --callout: rgba(255,255,255,.055); --kicker: #777770; }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { min-height: 100vh; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif; }
+      header { height: 76px; display: flex; align-items: center; padding: 0 32px; border-bottom: 1px solid var(--line); background: var(--header-bg); position: sticky; top: 0; z-index: 2; backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+      .brand { font-size: 26px; font-weight: 900; letter-spacing: 0; }
+      .brand span { color: var(--muted); font-weight: 650; }
+      .layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); min-height: calc(100vh - 76px); }
+      nav { border-right: 1px solid var(--line); padding: 28px 24px 60px; position: sticky; top: 76px; height: calc(100vh - 76px); overflow-y: auto; }
+      nav strong { display: block; margin: 20px 0 12px; color: var(--text); font-size: 14px; }
+      nav a { display: block; padding: 9px 14px; border-radius: 8px; color: var(--muted); text-decoration: none; font-size: 15px; line-height: 1.25; }
+      nav a.active { background: var(--nav-active); color: var(--text); border-left: 2px solid var(--accent); }
+      main { max-width: 980px; padding: 44px 52px 90px; }
+      .kicker { color: var(--kicker); font-weight: 800; font-size: 15px; margin-bottom: 28px; }
+      h1 { font-size: 34px; line-height: 1.15; margin-bottom: 18px; letter-spacing: 0; }
+      h2 { font-size: 23px; line-height: 1.2; margin: 52px 0 18px; letter-spacing: 0; }
+      h1[id], h2[id] { scroll-margin-top: 104px; }
+      h3 { font-size: 18px; margin: 26px 0 10px; }
+      p, li { color: var(--muted); font-size: 17px; line-height: 1.75; }
+      p + p { margin-top: 22px; }
+      ol, ul { padding-left: 28px; margin-top: 14px; }
+      li { margin: 12px 0; }
+      li strong, p strong { color: var(--text); }
+      .callout { margin: 28px 0; padding: 18px 20px; border-radius: 12px; background: var(--callout); border: 1px solid var(--line); color: var(--muted); }
+      .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
+      .card { padding: 18px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); }
+      .card strong { display: block; margin-bottom: 8px; }
+      @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } nav { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); } main { padding: 32px 24px 70px; } .grid { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <header><div class="brand">Image Studio <span>Docs</span></div></header>
+    <div class="layout">
+      <nav>
+        <strong>Getting Started</strong>
+        <a href="#how-it-works" class="active" data-guide-link>Image Studio 如何工作</a>
+        <a href="#first-project" data-guide-link>开始第一个项目</a>
+        <a href="#canvas-agent" data-guide-link>Agent 画布</a>
+        <strong>How to Prompt</strong>
+        <a href="#references" data-guide-link>添加参考图</a>
+        <a href="#models" data-guide-link>选择服务商和参数</a>
+        <a href="#templates" data-guide-link>模板和 Prompt 优化</a>
+        <strong>Edit Your Design</strong>
+        <a href="#editing" data-guide-link>快捷编辑</a>
+        <a href="#projects" data-guide-link>项目素材</a>
+        <a href="#export" data-guide-link>输出文件</a>
+      </nav>
+      <main>
+        <div class="kicker">Getting Started</div>
+        <h1 id="how-it-works">Image Studio 如何工作</h1>
+        <p>Image Studio 是一个本地图片生成工作台。你可以用聊天模式快速生成，也可以进入 Agent 画布，把文本、参考图、参数、生成节点和结果节点编排成一条可复用的创作链路。</p>
+        <p>它不会替你自动重试消耗费用。生成失败时会把上游错误、请求 ID 和本地日志反馈出来，方便你判断是服务商、参数、尺寸还是参考图导致的问题。</p>
+        <h2>核心思路</h2>
+        <ol>
+          <li><strong>输入你的想法。</strong> 在聊天框或 Agent 画布描述画面，也可以上传参考图。</li>
+          <li><strong>选择正确参数。</strong> 服务商、模型、尺寸、数量和超时都会被提交给本地生成接口。</li>
+          <li><strong>得到可继续编辑的结果。</strong> 结果图会保存到下载目录，并能作为参考图重新送回模型做二次编辑。</li>
+        </ol>
+        <h2 id="first-project">开始第一个项目</h2>
+        <p>如果你只是想快速出图，留在聊天模式即可。输入描述、选择模板或上传参考图，然后点击发送。生成完成后图片会显示在对话流里，并保存到项目输出目录。</p>
+        <div class="callout">输出目录默认是：~/Downloads/Image Studio。项目页会从这里读取最近生成和编辑工程。</div>
+        <h2 id="canvas-agent">Agent 画布</h2>
+        <p>画布默认是空的。你可以在右侧 Agent 输入想法，点击拆成节点；也可以从左侧把文本节点、参考图节点、参数节点、生成节点拖进画布，再通过端口连接。</p>
+        <div class="grid">
+          <div class="card"><strong>文本节点</strong><p>承载普通描述、局部要求或最终 prompt。</p></div>
+          <div class="card"><strong>参数节点</strong><p>集中管理服务商、模型、尺寸、数量和超时。</p></div>
+          <div class="card"><strong>生成节点</strong><p>汇总上游节点，点击后调用生成接口。</p></div>
+          <div class="card"><strong>结果节点</strong><p>展示输出图片，也能转为参考图继续编辑。</p></div>
+        </div>
+        <h2 id="references">添加参考图</h2>
+        <p>参考图可以从聊天模式上传、从画布顶部导入本地文件或文件夹，也可以从项目页导入历史生成图。参考图进入生成链路后，会自动切换为编辑/图生图模式。</p>
+        <h2 id="models">选择服务商和参数</h2>
+        <p>服务商设置保留内置服务商和自定义服务商。尺寸建议按最终用途选择，例如横版海报选择 16:9，竖版封面选择 9:16。自定义尺寸仍然保留。</p>
+        <h2 id="templates">模板和 Prompt 优化</h2>
+        <p>模板适合固定业务场景，Prompt 优化适合把草稿改成更完整的模型指令。画布里可以把模板节点、文本节点和 Prompt 优化节点连接到生成节点。</p>
+        <h2 id="editing">快捷编辑</h2>
+        <p>点击结果图后会出现图片工具栏。快捷编辑、去背景、局部重绘、编辑元素、编辑文字和多角度，本质都是把当前结果图作为参考图，再提交给上游 AI 模型进行二次生成。</p>
+        <h2 id="projects">项目素材</h2>
+        <p>项目页按最近生成、会话上传、编辑工程分类。画布顶部的导入菜单可以选择本地单一文件、本地文件夹或项目文件。</p>
+        <h2 id="export">输出文件</h2>
+        <p>生成和编辑结果会统一保存到下载目录下的 Image Studio 文件夹。项目页会自动读取这个目录，让你把历史素材重新导入回画布。</p>
+      </main>
+    </div>
+    <script>
+      const guideLinks = Array.from(document.querySelectorAll('[data-guide-link]'));
+      const sections = guideLinks
+        .map(link => document.querySelector(link.getAttribute('href')))
+        .filter(Boolean);
+
+      function setActiveGuideLink(id) {
+        guideLinks.forEach(link => {
+          link.classList.toggle('active', link.getAttribute('href') === `#${id}`);
+        });
+      }
+
+      guideLinks.forEach(link => {
+        link.addEventListener('click', () => {
+          const id = link.getAttribute('href').slice(1);
+          setActiveGuideLink(id);
+        });
+      });
+
+      const initialId = location.hash.slice(1);
+      if (initialId && document.getElementById(initialId)) setActiveGuideLink(initialId);
+
+      const observer = new IntersectionObserver((entries) => {
+        const visible = entries
+          .filter(entry => entry.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+        if (visible?.target?.id) setActiveGuideLink(visible.target.id);
+      }, { rootMargin: '-112px 0px -62% 0px', threshold: [0, 0.2, 0.6] });
+
+      sections.forEach(section => observer.observe(section));
+    </script>
+  </body>
+</html>

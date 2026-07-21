@@ -33,12 +33,14 @@ Open your browser at: `http://localhost:3487`
 
 ### Image Generation (Required)
 
-The server loads environment variables via `source ~/.zshrc` before calling the Python generation script:
+Copy `.env.example` to `.env` and fill in your own keys. The server loads `.env` automatically.
 
 - `FIGURE_API_KEY` — Image generation API key
 - `FIGURE_BASE_URL` — Image generation API endpoint
 - `FIGURE_FALLBACK_BASE_URL` — Fallback endpoint (optional)
 - `FIGURE_IMAGE_MODEL` — Model name (optional)
+- `GENERATE_SCRIPT_PATH` — Optional custom generation script path (defaults to `./scripts/generate.py`)
+- `IMAGE_STUDIO_OUTPUT_DIR` — Optional output directory (defaults to `./tmp/outputs`)
 
 ### Prompt Assistant (Optional)
 

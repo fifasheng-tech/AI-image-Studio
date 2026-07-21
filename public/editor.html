@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Image Studio 快捷编辑</title>
+    <link rel="stylesheet" href="/editor.css" />
+  </head>
+  <body>
+    <div class="quick-editor">
+      <header class="quick-toolbar" aria-label="快捷编辑工具栏">
+        <a class="tool-home" href="/" title="返回 Image Studio">
+          <span class="tool-home-icon">IS</span>
+          <span>快捷编辑</span>
+          <span class="tool-hint">Tab</span>
+        </a>
+        <div class="tool-divider"></div>
+        <button type="button" class="tool-button" data-tool="upscale" title="放大分辨率">
+          <span class="tool-icon">HD</span>
+          <span>放大</span>
+        </button>
+        <button type="button" class="tool-button" data-tool="remove-bg" title="去除背景">
+          <span class="tool-icon">BG</span>
+          <span>去背景</span>
+        </button>
+        <button type="button" class="tool-button" data-tool="eraser" title="橡皮工具">
+          <span class="tool-icon">ER</span>
+          <span>橡皮工具</span>
+        </button>
+        <button type="button" class="tool-button" data-tool="elements" title="编辑元素">
+          <span class="tool-icon">LY</span>
+          <span>编辑元素</span>
+        </button>
+        <button type="button" class="tool-button" data-tool="text" title="编辑文字">
+          <span class="tool-icon">T</span>
+          <span>编辑文字</span>
+        </button>
+        <button type="button" class="tool-button" data-tool="angles" title="多角度">
+          <span class="tool-icon">3D</span>
+          <span>多角度</span>
+        </button>
+        <button type="button" class="tool-button" data-tool="move" title="移动对象">
+          <span class="tool-icon">MV</span>
+          <span>移动对象</span>
+        </button>
+        <button type="button" class="tool-button more" data-tool="more" title="更多">
+          <span>...</span>
+        </button>
+        <div class="tool-spacer"></div>
+        <button type="button" class="download-button" id="saveImageBtn" title="保存到 Image Studio">
+          <span class="download-icon"></span>
+        </button>
+      </header>
+
+      <main class="quick-main">
+        <section class="canvas-stage" id="canvasStage">
+          <div class="viewport-controls" aria-label="画布缩放控制">
+            <button type="button" id="zoomOutBtn" title="缩小">−</button>
+            <button type="button" id="zoomResetBtn" title="适配画布"><span id="zoomLabel">100%</span></button>
+            <button type="button" id="zoomInBtn" title="放大">＋</button>
+          </div>
+          <div class="image-frame selected" id="imageFrame">
+            <div class="image-meta">
+              <div class="image-label" title="当前图片">
+                <span class="image-label-icon"></span>
+                <span id="imageTitle">Image</span>
+              </div>
+              <div class="image-size" id="imageSize">加载中</div>
+            </div>
+            <img id="editableImage" alt="待编辑图片" crossorigin="anonymous" />
+            <div class="layer-overlay-root" id="layerOverlayRoot"></div>
+            <div class="selection-box hidden" id="selectionBox"></div>
+            <div class="busy-overlay hidden" id="busyOverlay">
+              <span id="busyText">处理中</span>
+            </div>
+          </div>
+        </section>
+
+        <aside class="task-panel" id="taskPanel">
+          <div class="panel-header">
+            <h1 id="panelTitle">快捷编辑</h1>
+            <button type="button" class="panel-close" id="panelCloseBtn" title="关闭">×</button>
+          </div>
+          <div class="panel-body" id="panelBody"></div>
+          <div class="panel-status" id="saveStatus">选择一个工具开始编辑</div>
+        </aside>
+      </main>
+    </div>
+
+    <script src="/editor.js"></script>
+  </body>
+</html>

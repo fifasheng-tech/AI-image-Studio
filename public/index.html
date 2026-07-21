@@ -4,9 +4,24 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Figure Image Studio</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="%23007aff"/><path d="M17 43l12-14 8 9 5-6 8 11H17z" fill="white"/><circle cx="24" cy="23" r="5" fill="white"/></svg>' />
+    <script>
+      (() => {
+        try {
+          const storedTheme = localStorage.getItem('imageStudioTheme');
+          const theme = storedTheme === 'dark' || storedTheme === 'light'
+            ? storedTheme
+            : (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          document.documentElement.dataset.theme = theme;
+          document.documentElement.style.colorScheme = theme;
+        } catch (_) {
+          document.documentElement.dataset.theme = 'light';
+        }
+      })();
+    </script>
+    <link rel="stylesheet" href="/styles.css?v=20260613-canvas-drag-hit" />
   </head>
-  <body>
+  <body class="chat-mode">
     <div class="app-shell">
       <header class="top-bar glass">
         <div class="top-bar-left">
@@ -15,15 +30,43 @@
           </div>
           <span class="app-logo">Image Studio</span>
         </div>
+        <div class="mode-switch" aria-label="工作模式">
+          <button type="button" class="mode-switch-btn active" id="chatModeBtn" data-mode="chat">聊天</button>
+          <button type="button" class="mode-switch-btn" id="canvasModeBtn" data-mode="canvas">画布</button>
+          <button type="button" class="mode-switch-btn" id="projectModeBtn" data-mode="project">项目</button>
+        </div>
         <div class="top-bar-right">
-          <div class="status-dot" id="statusDot" title="检查服务中...">
-            <span class="dot"></span>
-          </div>
           <div class="user-avatar" id="userAvatar" title="用户">
+            <span id="userAvatarText" class="user-avatar-text" hidden>IS</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           </div>
         </div>
       </header>
+      <div class="user-menu glass" id="userMenu" aria-label="我的菜单">
+        <div class="user-menu-profile">
+          <div class="user-menu-avatar" id="userMenuAvatar">IS</div>
+          <div>
+            <div class="user-menu-name" id="userMenuName">Image Studio</div>
+            <div class="user-menu-email" id="userMenuEmail">未登录</div>
+          </div>
+        </div>
+        <div class="user-menu-list">
+          <div class="user-menu-section-label">账户</div>
+          <button type="button" class="user-menu-item" data-user-action="account">账户管理</button>
+          <div class="user-menu-section-label">工作区</div>
+          <button type="button" class="user-menu-item" data-user-action="team">创建团队</button>
+          <button type="button" class="user-menu-item" data-user-action="upgrade">升级</button>
+          <div class="user-menu-section-label">帮助</div>
+          <button type="button" class="user-menu-item" data-user-action="guide">使用指南</button>
+          <button type="button" class="user-menu-item" data-user-action="contact">联系我们</button>
+          <div class="user-menu-section-label">设置</div>
+          <button type="button" class="user-menu-item" data-user-action="theme" id="themeMenuItem">深色模式</button>
+          <button type="button" class="user-menu-item" data-user-action="language">简体中文</button>
+          <button type="button" class="user-menu-item" data-user-action="about">关于</button>
+        </div>
+        <div class="user-menu-divider"></div>
+        <button type="button" class="user-menu-item danger" id="userMenuLogoutBtn" data-user-action="logout">退出登录</button>
+      </div>
 
       <main class="conversation-area" id="conversationArea">
         <div class="welcome-section" id="welcomeSection">
@@ -41,30 +84,246 @@
         <div class="results-thread" id="resultsThread"></div>
       </main>
 
+      <section class="canvas-workspace" id="canvasWorkspace" aria-label="画布模式">
+        <aside class="canvas-sidebar glass" aria-label="画布节点工具栏">
+          <div class="canvas-panel-title">节点</div>
+          <button type="button" class="canvas-tool-btn" id="addCanvasTextBtn" draggable="true" data-canvas-tool="text" data-tooltip="文本节点" title="文本节点" aria-label="添加文本节点">
+            <span class="canvas-tool-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg></span>
+            <span class="canvas-tool-label">文本节点</span>
+          </button>
+          <button type="button" class="canvas-tool-btn" id="addCanvasTemplateBtn" draggable="true" data-canvas-tool="template" data-tooltip="模板节点" title="模板节点" aria-label="添加模板节点">
+            <span class="canvas-tool-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17h7"/><path d="M14 21h7"/></svg></span>
+            <span class="canvas-tool-label">模板节点</span>
+          </button>
+          <button type="button" class="canvas-tool-btn" id="addCanvasOptimizeBtn" draggable="true" data-canvas-tool="optimize" data-tooltip="Prompt 优化" title="Prompt 优化" aria-label="添加 Prompt 优化节点">
+            <span class="canvas-tool-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="M17.8 6.2l1.4-1.4"/><path d="M10.8 13.2l-1.4 1.4"/><path d="M10.8 4.8l-1.4-1.4"/><path d="M17.8 11.8l1.4 1.4"/><path d="M13 7l4 4"/><path d="M4 20l9-9"/></svg></span>
+            <span class="canvas-tool-label">Prompt 优化</span>
+          </button>
+          <button type="button" class="canvas-tool-btn" id="addCanvasImageBtn" draggable="true" data-canvas-tool="image" data-tooltip="参考图节点" title="参考图节点" aria-label="添加参考图节点">
+            <span class="canvas-tool-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-4-4L5 21"/></svg></span>
+            <span class="canvas-tool-label">参考图节点</span>
+          </button>
+          <button type="button" class="canvas-tool-btn" id="addCanvasParamsBtn" draggable="true" data-canvas-tool="params" data-tooltip="参数/服务商" title="参数/服务商" aria-label="添加参数服务商节点">
+            <span class="canvas-tool-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></span>
+            <span class="canvas-tool-label">参数/服务商</span>
+          </button>
+          <button type="button" class="canvas-tool-btn" id="addCanvasGenerateBtn" draggable="true" data-canvas-tool="generate" data-tooltip="生成节点" title="生成节点" aria-label="添加生成节点">
+            <span class="canvas-tool-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/><path d="M19 12h3"/></svg></span>
+            <span class="canvas-tool-label">生成节点</span>
+          </button>
+          <div class="canvas-panel-note">节点可拖入画布。滚轮或触控板平移，按住 Cmd/Ctrl/Alt 再滚动可缩放；从右侧端口拖到目标节点附近会自动吸附连线。</div>
+        </aside>
+        <div class="canvas-stage-wrap" id="canvasStageWrap">
+          <div class="canvas-toolbar canvas-action-toolbar">
+            <button type="button" class="canvas-zoom-btn canvas-add-node-btn" id="canvasAddNodeBtn" title="添加节点">节点</button>
+            <div class="canvas-import-wrap">
+              <button type="button" class="canvas-zoom-btn" id="canvasImportOutputBtn" title="导入" aria-haspopup="menu" aria-expanded="false">导入</button>
+              <div class="canvas-import-menu" id="canvasImportMenu" role="menu" aria-label="导入到画布" hidden>
+                <button type="button" data-canvas-import="file" role="menuitem">导入文件</button>
+                <button type="button" data-canvas-import="folder" role="menuitem">本地文件夹</button>
+                <button type="button" data-canvas-import="project" role="menuitem">从项目选择</button>
+              </div>
+            </div>
+          </div>
+          <div class="canvas-zoom-toolbar" aria-label="画布缩放">
+            <button type="button" class="canvas-zoom-btn" id="canvasZoomOutBtn" title="缩小">-</button>
+            <button type="button" class="canvas-zoom-btn" id="canvasZoomResetBtn" title="重置缩放">100%</button>
+            <button type="button" class="canvas-zoom-btn" id="canvasZoomInBtn" title="放大">+</button>
+          </div>
+          <div class="canvas-stage" id="canvasStage">
+            <svg class="canvas-connections" id="canvasConnections"></svg>
+          </div>
+          <div class="canvas-empty" id="canvasEmpty">
+            <div class="canvas-empty-title">从一个想法开始搭画布</div>
+            <div class="canvas-empty-sub">在 Agent 画布描述画面、上传参考图，或双击空白处添加节点；左侧工具也可以拖入画布编排。</div>
+          </div>
+        </div>
+        <aside class="canvas-agent-panel glass" id="canvasAgentPanel">
+          <div class="canvas-agent-head">
+            <div>
+              <div class="canvas-agent-kicker">Canvas</div>
+              <div class="canvas-agent-title">Agent 画布</div>
+            </div>
+            <div class="canvas-agent-head-actions">
+              <span class="canvas-agent-state" id="canvasAgentState">待命</span>
+              <button type="button" class="canvas-agent-collapse-btn" id="canvasAgentCollapseBtn" title="收起 Agent 画布" aria-label="收起 Agent 画布" aria-expanded="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="canvas-agent-log" id="canvasAgentLog" role="log" aria-live="polite"></div>
+          <div class="canvas-agent-assets" id="canvasAgentAssets"></div>
+          <div class="canvas-agent-composer">
+            <button type="button" class="canvas-agent-ref-tile" id="canvasAgentReferenceTile" title="上传参考图">
+              <span class="canvas-agent-ref-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              </span>
+              <span class="canvas-agent-ref-label">参考图</span>
+            </button>
+            <textarea class="canvas-agent-input" id="canvasAgentInput" rows="5" placeholder="输入你的想法，例如：上传这张参考图，生成横版 16:9 产品海报"></textarea>
+            <div class="canvas-agent-compose-tools" aria-label="Agent 画布工具">
+              <div class="canvas-agent-add-menu-wrap">
+                <button type="button" class="canvas-agent-chip-btn canvas-agent-add-btn" id="canvasAgentAddBtn" title="添加内容" aria-label="添加内容" aria-haspopup="menu" aria-expanded="false">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                </button>
+                <div class="canvas-agent-add-menu" id="canvasAgentAddMenu" role="menu" aria-label="添加内容" hidden>
+                  <button type="button" class="canvas-agent-add-option" data-agent-add="image" role="menuitem">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                    <span>上传图片</span>
+                  </button>
+                  <button type="button" class="canvas-agent-add-option" data-agent-add="folder" role="menuitem">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 012-2h5l2 2h7a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M12 11v5"/><path d="M9.5 13.5L12 11l2.5 2.5"/></svg>
+                    <span>文件夹上传</span>
+                  </button>
+                  <button type="button" class="canvas-agent-add-option" data-agent-add="assets" role="menuitem">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+                    <span>从项目选择</span>
+                  </button>
+                </div>
+              </div>
+              <button type="button" class="canvas-agent-icon-btn" id="canvasAgentTemplatesBtn" title="模板" aria-label="模板">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+              </button>
+              <label class="canvas-agent-select-chip" title="比例">
+                <span>比例</span>
+                <select id="canvasAgentSizeSelect" aria-label="比例"></select>
+              </label>
+              <label class="canvas-agent-select-chip compact" title="数量">
+                <select id="canvasAgentCountSelect" aria-label="数量">
+                  <option value="1">1 img</option>
+                  <option value="2">2 img</option>
+                  <option value="3">3 img</option>
+                  <option value="4">4 img</option>
+                </select>
+              </label>
+              <button type="button" class="canvas-agent-icon-btn" id="canvasAgentPlanBtn" title="拆成节点" aria-label="拆成节点">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="7" height="6" rx="1.5"/><rect x="14" y="14" width="7" height="6" rx="1.5"/><path d="M10 7h3a3 3 0 013 3v4"/></svg>
+              </button>
+              <button type="button" class="canvas-agent-send-btn" id="canvasAgentGenerateBtn" title="生成" aria-label="生成">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+              </button>
+            </div>
+          </div>
+        </aside>
+        <input type="file" id="canvasImageInput" accept="image/*" multiple hidden />
+        <input type="file" id="canvasFolderInput" accept="image/*" webkitdirectory directory multiple hidden />
+      </section>
+
+      <section class="project-workspace" id="projectWorkspace" aria-label="项目素材">
+        <div class="project-head">
+          <div>
+            <div class="project-kicker">Project</div>
+            <h2>项目</h2>
+            <p class="project-subtitle">管理最近生成和会话上传的素材，选择图片后可导入回画布继续编排。</p>
+          </div>
+          <div class="project-head-actions">
+            <div class="project-view-switch" role="group" aria-label="项目展示方式">
+              <button type="button" class="active" data-project-view="grid">网格</button>
+              <button type="button" data-project-view="masonry">瀑布</button>
+              <button type="button" data-project-view="spotlight">大图</button>
+              <button type="button" data-project-view="list">列表</button>
+            </div>
+          </div>
+        </div>
+        <div class="project-section">
+          <div class="project-section-head">
+            <h3>最近生成</h3>
+            <span id="projectGeneratedCount">0</span>
+          </div>
+          <div class="project-grid" id="projectGeneratedGrid"></div>
+        </div>
+        <div class="project-section">
+          <div class="project-section-head">
+            <h3>会话上传</h3>
+            <span id="projectUploadsCount">0</span>
+          </div>
+          <div class="project-grid" id="projectUploadsGrid"></div>
+        </div>
+        <div class="project-preview-backdrop" id="projectPreviewBackdrop" hidden>
+          <section class="project-preview-panel" role="dialog" aria-modal="true" aria-label="项目图片预览">
+            <button type="button" class="project-preview-close" id="projectPreviewCloseBtn" aria-label="关闭预览">&times;</button>
+            <div class="project-preview-media" id="projectPreviewMedia"></div>
+            <aside class="project-preview-info">
+              <div class="project-preview-kicker" id="projectPreviewSource">项目图片</div>
+              <h3 id="projectPreviewTitle">项目图片</h3>
+              <p id="projectPreviewPrompt"></p>
+              <div class="project-preview-meta" id="projectPreviewMeta"></div>
+              <div class="project-preview-actions">
+                <button type="button" class="btn-primary btn-sm" id="projectPreviewImportBtn">加入画布</button>
+                <button type="button" class="btn-secondary btn-sm" id="projectPreviewReferenceBtn">作为参考</button>
+                <button type="button" class="btn-secondary btn-sm" id="projectPreviewCopyPromptBtn">复制 Prompt</button>
+                <a class="btn-link btn-sm" id="projectPreviewDownloadLink" href="#" download>下载</a>
+              </div>
+            </aside>
+          </section>
+        </div>
+      </section>
+
       <div class="composer glass" id="composer">
         <div class="composer-attachments" id="composerAttachments"></div>
+        <button type="button" class="composer-reference-tile" id="composerReferenceTile" title="上传参考图" aria-label="上传参考图">
+          <span class="composer-reference-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          </span>
+          <span class="composer-reference-label">参考图</span>
+        </button>
         <div class="composer-input-row">
-          <textarea id="promptInput" rows="1" placeholder="描述画面内容、风格与比例，也可选择模板或上传参考图" autocomplete="off"></textarea>
-          <button type="button" class="composer-send" id="submitBtn" title="生成图片">
+          <textarea id="promptInput" rows="1" placeholder="输入你的想法开始创作" autocomplete="off"></textarea>
+          <button type="button" class="composer-send" id="submitBtn" title="发送生成">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
           </button>
         </div>
         <div class="composer-toolbar">
-          <button type="button" class="toolbar-btn" id="uploadToolBtn" title="上传参考图">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
-            <span class="toolbar-label">参考图</span>
-          </button>
-          <button type="button" class="toolbar-btn" id="templatesToolBtn" title="模板">
+          <div class="composer-add-menu-wrap">
+            <button type="button" class="toolbar-btn composer-add-btn" id="uploadToolBtn" title="添加内容" aria-label="添加内容" aria-haspopup="menu" aria-expanded="false">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+              <span class="toolbar-label">添加</span>
+            </button>
+            <div class="composer-add-menu" id="composerAddMenu" role="menu" aria-label="添加内容" hidden>
+              <button type="button" class="composer-add-option" data-agent-add="image" role="menuitem">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                <span>上传图片</span>
+              </button>
+              <button type="button" class="composer-add-option" data-agent-add="folder" role="menuitem">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 012-2h5l2 2h7a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M12 11v5"/><path d="M9.5 13.5L12 11l2.5 2.5"/></svg>
+                <span>文件夹上传</span>
+              </button>
+              <button type="button" class="composer-add-option" data-agent-add="assets" role="menuitem">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+                <span>从项目选择</span>
+              </button>
+            </div>
+          </div>
+          <button type="button" class="toolbar-btn composer-template-btn" id="templatesToolBtn" title="模板" aria-label="模板">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
             <span class="toolbar-label">模板</span>
           </button>
-          <button type="button" class="toolbar-btn" id="wandToolBtn" title="AI 优化 Prompt">
+          <label class="composer-select-chip" title="比例">
+            <span>比例</span>
+            <select id="composerSizeSelect" aria-label="比例"></select>
+          </label>
+          <label class="composer-select-chip compact" title="数量">
+            <select id="composerCountSelect" aria-label="数量">
+              <option value="1">1 img</option>
+              <option value="2">2 img</option>
+              <option value="3">3 img</option>
+              <option value="4">4 img</option>
+            </select>
+          </label>
+          <button type="button" class="toolbar-btn" id="settingsToolBtn" title="生成设置" aria-label="生成设置">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+            <span class="toolbar-label">设置</span>
+          </button>
+          <button type="button" class="toolbar-btn composer-plan-btn" id="composerPlanBtn" title="拆成节点" aria-label="拆成节点">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="7" height="6" rx="1.5"/><rect x="14" y="14" width="7" height="6" rx="1.5"/><path d="M10 7h3a3 3 0 013 3v4"/></svg>
+          </button>
+          <button type="button" class="toolbar-btn legacy-tool-btn" id="wandToolBtn" title="AI 优化 Prompt">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l1.09 3.26L16.36 6l-3.27 1.09L12 10.36l-1.09-3.27L7.64 6l3.27-1.09L12 2z"/><path d="M5 15l.54 1.63L7.18 17l-1.64.54L5 19.18l-.54-1.64L2.82 17l1.64-.54L5 15z"/><path d="M19 11l.54 1.63L21.18 13l-1.64.54L19 15.18l-.54-1.64L16.82 13l1.64-.54L19 11z"/></svg>
             <span class="toolbar-label">优化</span>
           </button>
-          <button type="button" class="toolbar-btn" id="settingsToolBtn" title="生成设置">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
-            <span class="toolbar-label">设置</span>
+          <button type="button" class="toolbar-btn legacy-tool-btn" id="legacyUploadToolBtn" title="上传参考图">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+            <span class="toolbar-label">上传</span>
           </button>
         </div>
         <input type="file" id="imagesInput" accept="image/*" multiple hidden />
@@ -118,6 +377,113 @@
         </div>
       </div>
 
+      <div class="drawer glass modal-drawer account-modal" id="accountDrawer" data-drawer="account">
+        <div class="drawer-header">
+          <h3>账户</h3>
+          <button type="button" class="drawer-close" data-close>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="drawer-body modal-body account-layout">
+          <aside class="modal-side-nav">
+            <strong>账户管理</strong>
+            <button type="button" class="active" data-account-section="profile">个人主页</button>
+            <button type="button" data-account-section="subscription">订阅</button>
+            <button type="button" data-account-section="billing">账单</button>
+          </aside>
+          <div class="modal-main-panel">
+            <div class="account-status-card" id="accountStatusCard"></div>
+            <form class="account-form" id="authForm" autocomplete="on">
+              <label class="setting-field">
+                <span>名称</span>
+                <input id="authNameInput" type="text" placeholder="Image Studio" autocomplete="name" />
+              </label>
+              <label class="setting-field">
+                <span>邮箱</span>
+                <input id="authEmailInput" type="email" placeholder="local@image.studio" autocomplete="email" />
+              </label>
+              <label class="setting-field">
+                <span>密码</span>
+                <input id="authPasswordInput" type="password" placeholder="至少 6 位" autocomplete="current-password" />
+              </label>
+              <div class="drawer-actions compact">
+                <button type="submit" class="btn-primary" id="authSubmitBtn">登录</button>
+                <button type="button" class="btn-secondary" id="authResetBtn">重置本地账户</button>
+                <button type="button" class="btn-secondary" id="authLogoutBtn">退出登录</button>
+              </div>
+              <div class="account-message" id="authMessage"></div>
+            </form>
+            <form class="account-form" id="profileForm" autocomplete="on">
+              <div class="section-title">账户信息</div>
+              <label class="setting-field">
+                <span>用户名</span>
+                <input id="profileNameInput" type="text" autocomplete="name" />
+              </label>
+              <label class="setting-field">
+                <span>电子邮箱</span>
+                <input id="profileEmailInput" type="email" autocomplete="email" />
+              </label>
+              <label class="setting-field">
+                <span>团队名称</span>
+                <input id="profileTeamInput" type="text" />
+              </label>
+              <div class="drawer-actions compact">
+                <button type="submit" class="btn-primary">保存资料</button>
+              </div>
+              <div class="account-message" id="profileMessage"></div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="drawer glass modal-drawer" id="teamDrawer" data-drawer="team">
+        <div class="drawer-header">
+          <h3>团队</h3>
+          <button type="button" class="drawer-close" data-close>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="drawer-body" id="teamDrawerBody"></div>
+      </div>
+
+      <div class="drawer glass modal-drawer upgrade-modal" id="upgradeDrawer" data-drawer="upgrade">
+        <div class="drawer-header">
+          <h3>升级</h3>
+          <button type="button" class="drawer-close" data-close>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="drawer-body modal-body upgrade-body">
+          <div class="upgrade-headline">
+            <h2>升级您的套餐</h2>
+            <div class="billing-toggle"><span>月付</span><strong>年付 低至 43 折</strong></div>
+          </div>
+          <div class="upgrade-grid">
+            <article class="plan-card"><span>Starter</span><strong>$16</strong><p>每月 2,000 积分</p><button type="button" data-plan="Starter">立即升级</button></article>
+            <article class="plan-card"><span>Basic</span><strong>$27</strong><p>每月 3,500 积分</p><button type="button" data-plan="Basic">立即升级</button></article>
+            <article class="plan-card featured"><em>全年最低价</em><span>Pro</span><strong>$39</strong><p>每月 11,000 积分</p><button type="button" data-plan="Pro">立即升级</button></article>
+            <article class="plan-card"><span>Ultimate</span><strong>$99</strong><p>每月 27,000 积分</p><button type="button" data-plan="Ultimate">立即升级</button></article>
+          </div>
+          <div class="upgrade-note">本地版暂不接入支付，后续可绑定真实计费服务；当前仅作为产品入口占位。</div>
+        </div>
+      </div>
+
+      <div class="drawer glass modal-drawer" id="contactDrawer" data-drawer="contact">
+        <div class="drawer-header">
+          <h3>联系我们</h3>
+          <button type="button" class="drawer-close" data-close>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="drawer-body">
+          <div class="contact-card">
+            <div><span>本地服务</span><strong id="contactServiceUrl">http://127.0.0.1:3493</strong></div>
+            <div><span>输出目录</span><strong id="contactOutputDir">读取中...</strong></div>
+            <div><span>反馈邮箱</span><strong>support@image.studio</strong></div>
+          </div>
+        </div>
+      </div>
+
       <div class="drawer glass" id="settingsDrawer" data-drawer="settings">
         <div class="drawer-header">
           <h3>生成设置</h3>
@@ -126,41 +492,118 @@
           </button>
         </div>
         <div class="drawer-body">
-          <label class="setting-field">
-            <span>图片模型</span>
-            <select id="modelSelect">
-              <option value="gpt-image-2" selected>gpt-image-2</option>
-            </select>
-          </label>
-          <label class="setting-field">
-            <span>输出尺寸</span>
-            <select id="sizeSelect">
-              <option value="1536x1024" selected>1536 x 1024 — 3:2 横图</option>
-              <option value="1024x1536">1024 x 1536 — 2:3 竖图</option>
-              <option value="1024x1024">1024 x 1024 — 1:1 方图</option>
-              <option value="2048x1536">2048 x 1536 — 4:3 横图 2K</option>
-              <option value="1536x2048">1536 x 2048 — 3:4 竖图 2K</option>
-              <option value="2048x2048">2048 x 2048 — 1:1 方图 2K</option>
-              <option value="3840x2160">3840 x 2160 — 16:9 横图 4K</option>
-              <option value="2160x3840">2160 x 3840 — 9:16 竖图 4K</option>
-              <option value="4096x4096">4096 x 4096 — 1:1 方图 4K</option>
-            </select>
-          </label>
-          <label class="setting-field">
-            <span>质量</span>
-            <select id="qualitySelect">
-              <option value="high" selected>high</option>
-              <option value="medium">medium</option>
-              <option value="low">low</option>
-            </select>
-          </label>
-          <label class="setting-field">
-            <span>背景</span>
-            <select id="backgroundSelect">
-              <option value="opaque" selected>opaque（不透明）</option>
-              <option value="transparent">transparent（透明）</option>
-            </select>
-          </label>
+          <section class="settings-section">
+            <div class="section-title">服务商</div>
+            <label class="setting-field">
+              <span>当前 API 提供商</span>
+              <select id="providerSelect">
+                <option value="figure" selected>Figure (默认)</option>
+                <option value="youmisub-image-2">youmisub-image-2</option>
+              </select>
+            </label>
+            <div class="provider-summary" id="providerSummary">正在加载服务商...</div>
+            <form class="provider-manager" id="providerManagerForm" autocomplete="off">
+              <div class="provider-manager-head">
+                <span>自定义服务商</span>
+                <button type="button" class="btn-secondary btn-sm" id="resetProviderFormBtn">新建</button>
+              </div>
+              <div class="setting-grid">
+                <label class="setting-field">
+                  <span>名称</span>
+                  <input id="customProviderName" type="text" placeholder="例如：my-image-api" />
+                </label>
+                <label class="setting-field">
+                  <span>默认模型</span>
+                  <input id="customProviderModel" type="text" placeholder="gpt-image-2" />
+                </label>
+              </div>
+              <label class="setting-field">
+                <span>API URL</span>
+                <input id="customProviderBaseUrl" type="url" placeholder="https://example.com" />
+              </label>
+              <label class="setting-field">
+                <span>API Key</span>
+                <input id="customProviderApiKey" type="password" placeholder="sk-..." autocomplete="off" />
+              </label>
+              <label class="setting-field">
+                <span>备用 URL（可选）</span>
+                <input id="customProviderFallbackUrl" type="url" placeholder="不填则使用 API URL" />
+              </label>
+              <div class="drawer-actions compact">
+                <button type="button" class="btn-primary" id="saveProviderBtn">保存服务商</button>
+                <button type="button" class="btn-secondary" id="deleteProviderBtn">删除</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="settings-section">
+            <div class="section-title">生成参数</div>
+            <label class="setting-field">
+              <span>图片模型</span>
+              <input id="modelSelect" type="text" list="modelOptions" value="gpt-image-2" />
+              <datalist id="modelOptions">
+                <option value="gpt-image-2"></option>
+                <option value="gpt-image-1"></option>
+                <option value="dall-e-3"></option>
+              </datalist>
+            </label>
+            <label class="setting-field">
+              <span>输出尺寸</span>
+              <select id="sizeSelect">
+                <option value="1536x1024" selected>1536 x 1024 - 3:2 横图</option>
+                <option value="1024x1536">1024 x 1536 - 2:3 竖图</option>
+                <option value="1024x1024">1024 x 1024 - 1:1 方图</option>
+                <option value="1280x720">1280 x 720 - 16:9 横图 HD</option>
+                <option value="720x1280">720 x 1280 - 9:16 竖图 HD</option>
+                <option value="1920x1080">1920 x 1080 - 16:9 横图 FHD</option>
+                <option value="1080x1920">1080 x 1920 - 9:16 竖图 FHD</option>
+                <option value="1600x900">1600 x 900 - 16:9 横图</option>
+                <option value="900x1600">900 x 1600 - 9:16 竖图</option>
+                <option value="1792x1024">1792 x 1024 - 7:4 横图</option>
+                <option value="1024x1792">1024 x 1792 - 4:7 竖图</option>
+                <option value="2048x1536">2048 x 1536 - 4:3 横图 2K</option>
+                <option value="1536x2048">1536 x 2048 - 3:4 竖图 2K</option>
+                <option value="2048x2048">2048 x 2048 - 1:1 方图 2K</option>
+                <option value="2560x1440">2560 x 1440 - 16:9 横图 2.5K</option>
+                <option value="1440x2560">1440 x 2560 - 9:16 竖图 2.5K</option>
+                <option value="3840x2160">3840 x 2160 - 16:9 横图 4K</option>
+                <option value="2160x3840">2160 x 3840 - 9:16 竖图 4K</option>
+                <option value="4096x4096">4096 x 4096 - 1:1 方图 4K</option>
+                <option value="custom">自定义尺寸</option>
+              </select>
+            </label>
+            <label class="setting-field hidden-field" id="customSizeWrap">
+              <span>自定义尺寸</span>
+              <input id="customSizeInput" type="text" placeholder="例如：1280x720" />
+            </label>
+            <div class="setting-grid">
+              <label class="setting-field">
+                <span>质量</span>
+                <select id="qualitySelect">
+                  <option value="high" selected>high</option>
+                  <option value="medium">medium</option>
+                  <option value="low">low</option>
+                </select>
+              </label>
+              <label class="setting-field">
+                <span>背景</span>
+                <select id="backgroundSelect">
+                  <option value="opaque" selected>opaque（不透明）</option>
+                  <option value="transparent">transparent（透明）</option>
+                </select>
+              </label>
+            </div>
+            <div class="setting-grid">
+              <label class="setting-field">
+                <span>生成张数</span>
+                <input id="nInput" type="number" min="1" max="4" step="1" value="1" />
+              </label>
+              <label class="setting-field">
+                <span>超时秒数</span>
+                <input id="timeoutInput" type="number" min="30" max="900" step="10" value="600" />
+              </label>
+            </div>
+          </section>
         </div>
       </div>
 
@@ -220,8 +663,40 @@
           <pre class="log-output" id="logOutput">点击刷新加载日志</pre>
         </div>
       </div>
+      <div class="app-toast" id="appToast" role="status" aria-live="polite"></div>
+      <div class="project-picker-backdrop" id="projectPickerBackdrop" hidden>
+        <section class="project-picker-panel glass" role="dialog" aria-modal="true" aria-label="从项目选择">
+          <div class="project-picker-head">
+            <div>
+              <div class="project-picker-kicker">Project</div>
+              <h3>从项目选择</h3>
+            </div>
+            <button type="button" class="project-picker-close" id="projectPickerCloseBtn" aria-label="关闭">&times;</button>
+          </div>
+          <div class="project-picker-body" id="projectPickerBody"></div>
+          <div class="project-picker-footer" id="projectPickerFooter">
+            <span id="projectPickerSelectedCount">可多选图片</span>
+            <div class="project-picker-footer-actions">
+              <button type="button" class="btn-secondary btn-sm" id="projectPickerCancelBtn">取消</button>
+              <button type="button" class="btn-primary btn-sm" id="projectPickerConfirmBtn" disabled>加入参考图</button>
+            </div>
+          </div>
+        </section>
+      </div>
+      <div class="project-picker-backdrop template-picker-backdrop" id="templatePickerBackdrop" hidden>
+        <section class="project-picker-panel template-picker-panel glass" role="dialog" aria-modal="true" aria-label="选择模板">
+          <div class="project-picker-head">
+            <div>
+              <div class="project-picker-kicker">Template</div>
+              <h3>模板</h3>
+            </div>
+            <button type="button" class="project-picker-close" id="templatePickerCloseBtn" aria-label="关闭">&times;</button>
+          </div>
+          <div class="template-picker-body" id="templatePickerBody"></div>
+        </section>
+      </div>
     </div>
 
-    <script src="/app.js"></script>
+    <script src="/app.js?v=20260613-canvas-drag-hit"></script>
   </body>
 </html>

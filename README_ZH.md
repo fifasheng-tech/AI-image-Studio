@@ -31,7 +31,7 @@ npm start
 
 ### 图片生成（必需）
 
-服务端通过 `source ~/.zshrc` 加载环境变量后调用 Python 脚本，需要配置：
+服务端通过 `.env` 加载环境变量后调用 Python 脚本，需要配置：
 
 - `FIGURE_API_KEY` — 图片生成 API Key
 - `FIGURE_BASE_URL` — 图片生成 API 地址
