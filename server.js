@@ -67,6 +67,159 @@ const promptLlmApiKey = pickFirstNonEmpty(
   ''
 );
 const authSessions = new Map();
+
+const newApiBaseUrl = String(process.env.NEWAPI_BASE || process.env.NEWAPI_BASE_URL || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+const newApiImageModel = String(process.env.NEWAPI_IMAGE_MODEL || 'gpt-image-2');
+const newApiTokenGroup = String(process.env.NEWAPI_TOKEN_GROUP || '生图');
+const NEWAPI_TOKEN_NAME = 'image-studio-auto';
+const newApiTokenKeyCache = new Map();
+const NEWAPI_TOKEN_CACHE_TTL_MS = 5 * 60 * 1000;
+
+function getNewApiCookie(req) {
+  const header = req.headers.cookie || '';
+  for (const part of header.split(';')) {
+    const eq = part.indexOf('=');
+    if (eq < 0) continue;
+    const name = part.slice(0, eq).trim();
+    if (name === 'session') return decodeURIComponent(part.slice(eq + 1).trim());
+  }
+  return '';
+}
+
+function getNewApiUid(req) {
+  const raw = req.headers['x-newapi-uid'] || req.query.newApiUid || req.body?.newApiUid;
+  const uid = Number.parseInt(String(raw || '').trim(), 10);
+  return Number.isInteger(uid) && uid > 0 ? uid : 0;
+}
+
+async function callNewApi(pathname, { method = 'GET', cookie = '', uid = 0, body, headers = {}, signal } = {}) {
+  const outgoingHeaders = {
+      ...(uid ? { 'New-Api-User': String(uid) } : {}),
+      ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+      ...(cookie ? { Cookie: `session=${cookie}` } : {}),
+      ...headers,
+    };
+  const response = await fetch(`${newApiBaseUrl}${pathname}`, {
+    method,
+    headers: outgoingHeaders,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+    signal,
+  });
+  const text = await response.text();
+  let data;
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch (_error) {
+    data = { success: false, message: `New API 响应异常：${text.slice(0, 200)}` };
+  }
+  return { response, data };
+}
+
+async function getNewApiSession(req) {
+  const cookie = getNewApiCookie(req);
+  const uid = getNewApiUid(req);
+  if (!cookie || !uid) {
+    return { authenticated: false, reason: '请先登录中转站账号' };
+  }
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 6000);
+    const { response, data } = await callNewApi('/api/user/self', { cookie, uid, signal: controller.signal });
+    clearTimeout(timer);
+    if (!response.ok || !data?.success || !data?.data?.id) {
+      return { authenticated: false, reason: data?.message || '中转站登录态已失效' };
+    }
+    const user = data.data;
+    if (Number(user.id) !== uid) {
+      return { authenticated: false, reason: '中转站登录身份校验失败' };
+    }
+    return {
+      authenticated: true,
+      cookie,
+      uid,
+      user: {
+        id: Number(user.id),
+        username: user.username || '',
+        display_name: user.display_name || user.username || '',
+        email: user.email || '',
+        group: user.group || '',
+        role: Number(user.role || 0),
+        quota: Number(user.quota || 0),
+        used_quota: Number(user.used_quota || 0),
+      },
+    };
+  } catch (error) {
+    return { authenticated: false, reason: `无法连接中转站账号服务：${error.message}` };
+  }
+}
+
+function normalizeNewApiKey(value) {
+  const key = String(value || '').trim();
+  return key ? (key.startsWith('sk-') ? key : `sk-${key}`) : '';
+}
+
+async function getNewApiUserKey(session, requestedModel = newApiImageModel) {
+  const cacheKey = `${session.uid}:${requestedModel}`;
+  const cached = newApiTokenKeyCache.get(cacheKey);
+  if (cached && Date.now() - cached.at < NEWAPI_TOKEN_CACHE_TTL_MS) {
+    return cached.key;
+  }
+
+  const listResult = await callNewApi('/api/token/?p=1&size=100', { cookie: session.cookie, uid: session.uid });
+  if (!listResult.response.ok || !listResult.data?.success) {
+    throw new Error(listResult.data?.message || '读取中转站账号令牌失败');
+  }
+
+  let token = (listResult.data?.data?.items || []).find(item =>
+    item.name === NEWAPI_TOKEN_NAME && Number(item.status) === 1
+  );
+
+  if (!token) {
+    const createResult = await callNewApi('/api/token/', {
+      method: 'POST',
+      cookie: session.cookie,
+      uid: session.uid,
+      body: {
+        name: NEWAPI_TOKEN_NAME,
+        remain_quota: 0,
+        expired_time: -1,
+        unlimited_quota: true,
+        model_limits_enabled: true,
+        model_limits: requestedModel,
+        group: newApiTokenGroup,
+      },
+    });
+    if (!createResult.response.ok || !createResult.data?.success) {
+      throw new Error(createResult.data?.message || '创建画布生图令牌失败');
+    }
+    const refresh = await callNewApi(`/api/token/search?keyword=${encodeURIComponent(NEWAPI_TOKEN_NAME)}&p=1&size=20`, { cookie: session.cookie, uid: session.uid });
+    token = (refresh.data?.data?.items || []).find(item => item.name === NEWAPI_TOKEN_NAME && Number(item.status) === 1);
+    if (!token) throw new Error('画布生图令牌创建成功但读取失败');
+  }
+
+  const keyResult = await callNewApi(`/api/token/${token.id}/key`, {
+    method: 'POST',
+    cookie: session.cookie,
+    uid: session.uid,
+  });
+  const key = normalizeNewApiKey(keyResult.data?.data?.key);
+  if (!key) throw new Error(keyResult.data?.message || '读取画布生图令牌失败');
+
+  newApiTokenKeyCache.set(cacheKey, { key, at: Date.now() });
+  return key;
+}
+
+function newApiProvider(session, apiKey, model = newApiImageModel) {
+  return normalizeImageProvider({
+    id: 'newapi-account',
+    name: `New API · ${session.user.display_name || session.user.username}`,
+    baseUrl: newApiBaseUrl,
+    fallbackBaseUrl: newApiBaseUrl,
+    apiKey,
+    model,
+  });
+}
 const generationPolicy = {
   maxAttemptsPerBase: clampInteger(process.env.IMAGE_STUDIO_IMAGE_ATTEMPTS, 1, 5, 3),
   disableFallback: ['1', 'true', 'yes'].includes(String(process.env.IMAGE_STUDIO_DISABLE_FALLBACK || '').toLowerCase()),
@@ -267,6 +420,16 @@ app.post('/api/account/profile', (req, res) => {
   }];
   writeAuthStore(authStore);
   res.json({ ok: true, account: publicAccount(authStore.account), team: authStore.team });
+});
+
+app.get('/api/session', async (req, res) => {
+  const session = await getNewApiSession(req);
+  res.status(session.authenticated ? 200 : 401).json({
+    ok: session.authenticated,
+    authenticated: session.authenticated,
+    reason: session.authenticated ? '' : session.reason,
+    user: session.authenticated ? session.user : null,
+  });
 });
 
 app.get('/api/outputs', (_req, res) => {
@@ -533,6 +696,15 @@ app.post('/api/generate', upload.fields([
   const files = req.files || {};
   const images = files.images || [];
   const mask = files.mask?.[0] || null;
+  const newApiSession = await getNewApiSession(req);
+  if (!newApiSession.authenticated) {
+    return res.status(401).json({
+      ok: false,
+      error: newApiSession.reason || '请先登录中转站账号',
+      requireLogin: true,
+      requestId,
+    });
+  }
 
   if (!prompt) {
     return res.status(400).json({ ok: false, error: 'prompt 不能为空' });
@@ -550,12 +722,14 @@ app.post('/api/generate', upload.fields([
   const timeout = clampInteger(body.timeout, 30, 900, 600);
   const prefix = `webui-${Date.now()}`;
 
-  const providerId = (body.provider || 'figure').trim();
+  const requestedModel = normalizeModelValue(body.model, newApiImageModel);
   let provider;
   try {
-    provider = resolveImageProvider(providerId, body.providerConfig);
+    const accountKey = await getNewApiUserKey(newApiSession, requestedModel);
+    provider = newApiProvider(newApiSession, accountKey, requestedModel);
   } catch (error) {
-    return res.status(400).json({ ok: false, error: error.message, requestId });
+    appendLog({ type: 'generate-auth-error', requestId, userId: newApiSession.uid, message: error.message });
+    return res.status(403).json({ ok: false, error: error.message, requestId });
   }
 
   appendLog({

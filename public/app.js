@@ -351,10 +351,10 @@ userAvatar.addEventListener('click', (e) => {
 userMenu.querySelectorAll('[data-user-action]').forEach(btn => {
   btn.addEventListener('click', () => handleUserMenuAction(btn.dataset.userAction));
 });
-authForm.addEventListener('submit', handleAuthSubmit);
-authResetBtn.addEventListener('click', handleAuthReset);
-authLogoutBtn.addEventListener('click', handleLogout);
-profileForm.addEventListener('submit', handleProfileSubmit);
+authForm?.addEventListener('submit', handleAuthSubmit);
+authResetBtn?.addEventListener('click', handleAuthReset);
+authLogoutBtn?.addEventListener('click', handleLogout);
+profileForm?.addEventListener('submit', handleProfileSubmit);
 document.querySelectorAll('[data-account-section]').forEach(btn => {
   btn.addEventListener('click', () => handleAccountSectionClick(btn));
 });
@@ -517,48 +517,19 @@ function closeUserMenuFromOutside(e) {
 
 function handleUserMenuAction(action) {
   closeUserMenu();
-  if (action === 'account') {
-    renderAccountCenter();
-    openDrawer('account');
-    return;
-  }
-  if (action === 'upgrade') {
-    openDrawer('upgrade');
-    return;
-  }
   if (action === 'guide') {
     window.open(toAppUrl('/guide.html'), '_blank', 'noopener');
-    return;
-  }
-  if (action === 'contact') {
-    renderContactDrawer();
-    openDrawer('contact');
     return;
   }
   if (action === 'theme') {
     toggleTheme();
     return;
   }
-  if (action === 'language') {
-    showToast('当前已是简体中文。英文界面会在后续版本开放。');
+  if (action === 'console') {
+    window.location.assign('/console');
     return;
-  }
-  if (action === 'team') {
-    renderTeamDrawer();
-    openDrawer('team');
-    return;
-  }
-  if (action === 'about') {
-    renderContactDrawer();
-    openDrawer('contact');
-    showToast('Image Studio 本地版：生成、画布、项目素材和轻量账户已启用。');
-    return;
-  }
-  if (action === 'logout') {
-    handleLogout();
   }
 }
-
 function showToast(message, kind = '') {
   if (!appToast) return;
   window.clearTimeout(showToast.timer);
@@ -571,30 +542,42 @@ function showToast(message, kind = '') {
   }, 2600);
 }
 
+function getNewApiUid() {
+  const uid = Number.parseInt(String(localStorage.getItem('uid') || '').trim(), 10);
+  return Number.isInteger(uid) && uid > 0 ? uid : 0;
+}
+
 async function loadAccountState() {
   try {
-    const res = await fetch(apiUrl('/api/account'));
+    const uid = getNewApiUid();
+    const res = await fetch(apiUrl('/api/session'), {
+      headers: uid ? { 'x-newapi-uid': String(uid) } : {},
+    });
     const data = await res.json();
-    if (!res.ok || !data.ok) throw new Error(data.error || '账户状态读取失败');
-    state.account = data.account || null;
-    state.team = data.team || null;
-    state.setupRequired = Boolean(data.setupRequired);
-    state.authenticated = Boolean(data.authenticated);
+    if (!res.ok || !data.ok) throw new Error(data.reason || data.error || '请先登录中转站账号');
+    state.account = {
+      id: data.user?.id || 0,
+      name: data.user?.display_name || data.user?.username || 'New API 用户',
+      email: data.user?.email || `UID ${data.user?.id || ''}`,
+      role: data.user?.group ? data.user.group : 'New API',
+      avatarText: (data.user?.display_name || data.user?.username || 'NP').slice(0, 1).toUpperCase(),
+      quota: data.user?.quota || 0,
+      usedQuota: data.user?.used_quota || 0,
+    };
+    state.authenticated = true;
   } catch (_error) {
     state.account = null;
-    state.team = null;
-    state.setupRequired = false;
     state.authenticated = false;
   }
   renderUserIdentity();
   renderAccountCenter();
-  renderTeamDrawer();
+  renderProviderSummary();
 }
 
 function renderUserIdentity() {
   const account = state.account;
   const name = account?.name || 'LemonGir Canvas';
-  const email = account?.email || (state.setupRequired ? '首次使用，请创建本地账户' : '未登录');
+  const email = state.authenticated ? (account?.email || `UID ${account?.id || ''}`) : '未登录';
   const avatar = account?.avatarText || 'IS';
   userMenuAvatar.textContent = avatar;
   userMenuName.textContent = name;
@@ -603,33 +586,17 @@ function renderUserIdentity() {
   userAvatarText.hidden = !state.authenticated;
   userAvatar.querySelector('svg').hidden = state.authenticated;
   userAvatar.classList.toggle('logged-in', state.authenticated);
-  userMenuLogoutBtn.hidden = !state.authenticated;
-  userMenuLogoutBtn.previousElementSibling.hidden = !state.authenticated;
 }
 
 function renderAccountCenter() {
   const account = state.account;
-  const isAuthed = state.authenticated && account;
-  accountStatusCard.innerHTML = isAuthed
-    ? `<div class="account-status-avatar">${escapeHtml(account.avatarText || 'IS')}</div><div><strong>${escapeHtml(account.name)}</strong><span>${escapeHtml(account.email)} · ${escapeHtml(account.role || 'Owner')}</span></div>`
-    : `<div class="account-status-avatar muted">IS</div><div><strong>${state.setupRequired ? '创建本地账户' : '登录本地账户'}</strong><span>${state.setupRequired ? '首次使用会在本机保存账号资料' : '登录后可管理账户和团队资料'}</span></div>`;
-  authNameInput.closest('.setting-field').style.display = state.setupRequired ? 'grid' : 'none';
-  authEmailInput.closest('.setting-field').style.display = isAuthed ? 'none' : 'grid';
-  authPasswordInput.closest('.setting-field').style.display = isAuthed ? 'none' : 'grid';
-  authNameInput.value = account?.name || authNameInput.value || 'LemonGir Canvas';
-  authEmailInput.value = account?.email || authEmailInput.value || 'local@image.studio';
-  authPasswordInput.value = '';
-  authSubmitBtn.textContent = state.setupRequired ? '创建并登录' : '登录';
-  authSubmitBtn.hidden = isAuthed;
-  authForm.hidden = false;
-  authResetBtn.hidden = isAuthed || state.setupRequired;
-  authLogoutBtn.hidden = !isAuthed;
-  profileForm.hidden = !isAuthed;
-  if (isAuthed) {
-    profileNameInput.value = account.name || '';
-    profileEmailInput.value = account.email || '';
-    profileTeamInput.value = state.team?.name || 'LemonGir Canvas';
-  }
+  if (authForm) authForm.hidden = true;
+  if (profileForm) profileForm.hidden = true;
+  if (authResetBtn) authResetBtn.hidden = true;
+  if (authLogoutBtn) authLogoutBtn.hidden = true;
+  accountStatusCard.innerHTML = state.authenticated && account
+    ? `<div class="account-status-avatar">${escapeHtml(account.avatarText || 'NP')}</div><div><strong>${escapeHtml(account.name)}</strong><span>${escapeHtml(account.email || `UID ${account.id}`)} · 已连接 New API 额度</span></div>`
+    : `<div class="account-status-avatar muted">IS</div><div><strong>请先登录中转站</strong><span>画布生图将直接使用 New API 账号额度</span></div>`;
 }
 
 async function handleAuthReset() {
@@ -3715,18 +3682,7 @@ async function runCanvasImageEdit(nodeId) {
   const formData = new FormData();
   formData.append('mode', 'edit');
   formData.append('prompt', withSizeLayoutInstruction(prompt, params.size));
-  const provider = state.providers.find(item => item.id === params.provider) || getSelectedProvider();
-  formData.append('provider', provider?.id || params.provider || providerSelect.value);
-  if (provider?.custom) {
-    formData.append('providerConfig', JSON.stringify({
-      id: provider.id,
-      name: provider.name,
-      baseUrl: provider.baseUrl,
-      fallbackBaseUrl: provider.fallbackBaseUrl,
-      apiKey: provider.apiKey,
-      model: provider.model,
-    }));
-  }
+  formData.append('provider', 'newapi-account');
   formData.append('model', params.model);
   formData.append('size', params.size);
   formData.append('quality', params.quality);
@@ -3739,7 +3695,7 @@ async function runCanvasImageEdit(nodeId) {
   try {
     const imageFile = await fetchCanvasResultAsFile(fileMeta);
     formData.append('images', imageFile);
-    const response = await fetch(apiUrl('/api/generate'), { method: 'POST', body: formData });
+    const response = await fetch(apiUrl('/api/generate'), { method: 'POST', headers: { 'x-newapi-uid': String(getNewApiUid() || '') }, body: formData });
     const data = await response.json();
     if (!response.ok || !data.ok) throw new Error(formatGenerateError(data));
     const editedNode = addCanvasNode('result', {
@@ -3826,18 +3782,7 @@ async function runCanvasGenerate(generateNodeId) {
   const formData = new FormData();
   formData.append('prompt', withSizeLayoutInstruction(prompt, params.size));
   formData.append('mode', images.length ? 'edit' : 'generate');
-  const provider = state.providers.find(item => item.id === params.provider) || getSelectedProvider();
-  formData.append('provider', provider?.id || params.provider || providerSelect.value);
-  if (provider?.custom) {
-    formData.append('providerConfig', JSON.stringify({
-      id: provider.id,
-      name: provider.name,
-      baseUrl: provider.baseUrl,
-      fallbackBaseUrl: provider.fallbackBaseUrl,
-      apiKey: provider.apiKey,
-      model: provider.model,
-    }));
-  }
+  formData.append('provider', 'newapi-account');
   formData.append('model', params.model);
   formData.append('size', params.size);
   formData.append('quality', params.quality);
@@ -3849,7 +3794,7 @@ async function runCanvasGenerate(generateNodeId) {
   setGenerating(true);
   updateCanvasGenerateStatus(generateNode, '生成中...', '');
   try {
-    const response = await fetch(apiUrl('/api/generate'), { method: 'POST', body: formData });
+    const response = await fetch(apiUrl('/api/generate'), { method: 'POST', headers: { 'x-newapi-uid': String(getNewApiUid() || '') }, body: formData });
     const data = await response.json();
     if (!response.ok || !data.ok) {
       throw new Error(formatGenerateError(data));
@@ -4385,26 +4330,17 @@ sizeSelect.addEventListener('change', () => {
 });
 
 function renderProviderSelect() {
-  state.providers = [
-    ...state.builtInProviders,
-    ...state.customProviders.map(provider => ({ ...provider, builtIn: false, custom: true, configured: Boolean(provider.apiKey) })),
-  ];
-
-  const savedSettings = readGenerationSettings();
-  const currentValue = savedSettings.provider || localStorage.getItem('imageProvider') || providerSelect.value || 'figure';
-  const builtInOptions = state.builtInProviders.map(provider => providerOptionHtml(provider, currentValue)).join('');
-  const customOptions = state.customProviders.map(provider => providerOptionHtml(provider, currentValue)).join('');
-
-  providerSelect.innerHTML = [
-    builtInOptions ? `<optgroup label="内置服务商">${builtInOptions}</optgroup>` : '',
-    customOptions ? `<optgroup label="自定义服务商">${customOptions}</optgroup>` : '',
-  ].join('');
-
-  if (!state.providers.some(provider => provider.id === currentValue) && providerSelect.options.length) {
-    providerSelect.selectedIndex = 0;
-  }
-
-  localStorage.setItem('imageProvider', providerSelect.value);
+  state.providers = [{
+    id: 'newapi-account',
+    name: 'New API 账号额度',
+    baseUrl: '',
+    model: 'gpt-image-2',
+    configured: state.authenticated,
+    builtIn: true,
+  }];
+  providerSelect.innerHTML = '<option value="newapi-account">New API 账号额度</option>';
+  localStorage.setItem('imageProvider', 'newapi-account');
+  providerSelect.closest('.setting-field').style.display = 'none';
   renderProviderForm();
   renderProviderSummary();
   renderCanvas();
@@ -4470,17 +4406,15 @@ function applyProviderDefaults() {
 }
 
 function renderProviderSummary() {
-  const provider = getSelectedProvider();
-  if (!provider) {
-    providerSummary.textContent = '暂无可用服务商';
+  if (!state.authenticated) {
+    providerSummary.textContent = '未登录中转站 · 请先从 New API 登录';
     providerSummary.classList.add('warning');
     return;
   }
-
-  const source = provider.custom ? '自定义' : '内置';
-  const configured = provider.configured === false ? '未配置 Key' : '已配置';
-  providerSummary.textContent = `${source} · ${configured} · ${provider.baseUrl || '未填写 URL'} · ${provider.model || 'gpt-image-2'}`;
-  providerSummary.classList.toggle('warning', provider.configured === false);
+  const quota = Number(state.account?.quota || 0) / 500000;
+  const used = Number(state.account?.usedQuota || 0) / 500000;
+  providerSummary.textContent = `New API · ${state.account?.name || '已登录'} · 剩余额度 $${quota.toFixed(2)}`;
+  providerSummary.classList.remove('warning');
 }
 
 function renderProviderForm() {

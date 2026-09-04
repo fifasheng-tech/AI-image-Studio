@@ -51,21 +51,11 @@
           </div>
         </div>
         <div class="user-menu-list">
-          <div class="user-menu-section-label">账户</div>
-          <button type="button" class="user-menu-item" data-user-action="account">账户管理</button>
-          <div class="user-menu-section-label">工作区</div>
-          <button type="button" class="user-menu-item" data-user-action="team">创建团队</button>
-          <button type="button" class="user-menu-item" data-user-action="upgrade">升级</button>
-          <div class="user-menu-section-label">帮助</div>
+          <div class="user-menu-section-label">工作台</div>
           <button type="button" class="user-menu-item" data-user-action="guide">使用指南</button>
-          <button type="button" class="user-menu-item" data-user-action="contact">联系我们</button>
-          <div class="user-menu-section-label">设置</div>
           <button type="button" class="user-menu-item" data-user-action="theme" id="themeMenuItem">深色模式</button>
-          <button type="button" class="user-menu-item" data-user-action="language">简体中文</button>
-          <button type="button" class="user-menu-item" data-user-action="about">关于</button>
+          <button type="button" class="user-menu-item" data-user-action="console">前往控制台</button>
         </div>
-        <div class="user-menu-divider"></div>
-        <button type="button" class="user-menu-item danger" id="userMenuLogoutBtn" data-user-action="logout">退出登录</button>
       </div>
 
       <main class="conversation-area" id="conversationArea">
@@ -377,61 +367,17 @@
         </div>
       </div>
 
-      <div class="drawer glass modal-drawer account-modal" id="accountDrawer" data-drawer="account">
+      <div class="drawer glass modal-drawer account-modal" id="accountDrawer" data-drawer="account" hidden>
         <div class="drawer-header">
-          <h3>账户</h3>
+          <h3>New API 账号</h3>
           <button type="button" class="drawer-close" data-close>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
         <div class="drawer-body modal-body account-layout">
-          <aside class="modal-side-nav">
-            <strong>账户管理</strong>
-            <button type="button" class="active" data-account-section="profile">个人主页</button>
-            <button type="button" data-account-section="subscription">订阅</button>
-            <button type="button" data-account-section="billing">账单</button>
-          </aside>
           <div class="modal-main-panel">
             <div class="account-status-card" id="accountStatusCard"></div>
-            <form class="account-form" id="authForm" autocomplete="on">
-              <label class="setting-field">
-                <span>名称</span>
-                <input id="authNameInput" type="text" placeholder="LemonGir" autocomplete="name" />
-              </label>
-              <label class="setting-field">
-                <span>邮箱</span>
-                <input id="authEmailInput" type="email" placeholder="local@image.studio" autocomplete="email" />
-              </label>
-              <label class="setting-field">
-                <span>密码</span>
-                <input id="authPasswordInput" type="password" placeholder="至少 6 位" autocomplete="current-password" />
-              </label>
-              <div class="drawer-actions compact">
-                <button type="submit" class="btn-primary" id="authSubmitBtn">登录</button>
-                <button type="button" class="btn-secondary" id="authResetBtn">重置本地账户</button>
-                <button type="button" class="btn-secondary" id="authLogoutBtn">退出登录</button>
-              </div>
-              <div class="account-message" id="authMessage"></div>
-            </form>
-            <form class="account-form" id="profileForm" autocomplete="on">
-              <div class="section-title">账户信息</div>
-              <label class="setting-field">
-                <span>用户名</span>
-                <input id="profileNameInput" type="text" autocomplete="name" />
-              </label>
-              <label class="setting-field">
-                <span>电子邮箱</span>
-                <input id="profileEmailInput" type="email" autocomplete="email" />
-              </label>
-              <label class="setting-field">
-                <span>团队名称</span>
-                <input id="profileTeamInput" type="text" />
-              </label>
-              <div class="drawer-actions compact">
-                <button type="submit" class="btn-primary">保存资料</button>
-              </div>
-              <div class="account-message" id="profileMessage"></div>
-            </form>
+            <div class="account-message" id="authMessage"></div>
           </div>
         </div>
       </div>
@@ -493,8 +439,8 @@
         </div>
         <div class="drawer-body">
           <section class="settings-section">
-            <div class="section-title">服务商</div>
-            <label class="setting-field">
+            <div class="section-title">生图账号</div>
+            <label class="setting-field" hidden>
               <span>当前 API 提供商</span>
               <select id="providerSelect">
                 <option value="figure" selected>Figure (默认)</option>
@@ -502,7 +448,7 @@
               </select>
             </label>
             <div class="provider-summary" id="providerSummary">正在加载服务商...</div>
-            <form class="provider-manager" id="providerManagerForm" autocomplete="off">
+            <form class="provider-manager" id="providerManagerForm" autocomplete="off" hidden>
               <div class="provider-manager-head">
                 <span>自定义服务商</span>
                 <button type="button" class="btn-secondary btn-sm" id="resetProviderFormBtn">新建</button>
@@ -697,6 +643,6 @@
       </div>
     </div>
 
-    <script src="app.js?v=20260613-canvas-drag-hit"></script>
+    <script src="app.js?v=20260905-newapi-auth2"></script>
   </body>
 </html>
