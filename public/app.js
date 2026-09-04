@@ -1,5 +1,15 @@
 const $ = (id) => document.getElementById(id);
 
+const BASE_PATH = new URL('.', location.href).pathname.replace(/\/$/, '');
+function apiUrl(path) {
+  return `${BASE_PATH}${path}`;
+}
+function toAppUrl(value) {
+  const url = String(value || '');
+  if (!url || url.startsWith('blob:') || /^https?:\/\//i.test(url) || url.startsWith('data:')) return url;
+  return `${BASE_PATH}/${url.replace(/^\/+/, '')}`;
+}
+
 const promptInput = $('promptInput');
 const submitBtn = $('submitBtn');
 const composer = $('composer');
@@ -517,7 +527,7 @@ function handleUserMenuAction(action) {
     return;
   }
   if (action === 'guide') {
-    window.open('/guide.html', '_blank', 'noopener');
+    window.open(toAppUrl('/guide.html'), '_blank', 'noopener');
     return;
   }
   if (action === 'contact') {
@@ -563,7 +573,7 @@ function showToast(message, kind = '') {
 
 async function loadAccountState() {
   try {
-    const res = await fetch('/api/account');
+    const res = await fetch(apiUrl('/api/account'));
     const data = await res.json();
     if (!res.ok || !data.ok) throw new Error(data.error || '账户状态读取失败');
     state.account = data.account || null;
@@ -583,7 +593,7 @@ async function loadAccountState() {
 
 function renderUserIdentity() {
   const account = state.account;
-  const name = account?.name || 'Image Studio';
+  const name = account?.name || 'LemonGir Canvas';
   const email = account?.email || (state.setupRequired ? '首次使用，请创建本地账户' : '未登录');
   const avatar = account?.avatarText || 'IS';
   userMenuAvatar.textContent = avatar;
@@ -606,7 +616,7 @@ function renderAccountCenter() {
   authNameInput.closest('.setting-field').style.display = state.setupRequired ? 'grid' : 'none';
   authEmailInput.closest('.setting-field').style.display = isAuthed ? 'none' : 'grid';
   authPasswordInput.closest('.setting-field').style.display = isAuthed ? 'none' : 'grid';
-  authNameInput.value = account?.name || authNameInput.value || 'Image Studio';
+  authNameInput.value = account?.name || authNameInput.value || 'LemonGir Canvas';
   authEmailInput.value = account?.email || authEmailInput.value || 'local@image.studio';
   authPasswordInput.value = '';
   authSubmitBtn.textContent = state.setupRequired ? '创建并登录' : '登录';
@@ -618,7 +628,7 @@ function renderAccountCenter() {
   if (isAuthed) {
     profileNameInput.value = account.name || '';
     profileEmailInput.value = account.email || '';
-    profileTeamInput.value = state.team?.name || 'Image Studio Team';
+    profileTeamInput.value = state.team?.name || 'LemonGir Canvas';
   }
 }
 
@@ -626,14 +636,14 @@ async function handleAuthReset() {
   if (!window.confirm('确定要重置本地账户吗？这只会删除本机登录资料，不会删除服务商配置、输出图片和项目文件。')) return;
   setAccountMessage(authMessage, '正在重置本地账户...', '');
   try {
-    const res = await fetch('/api/account/reset', { method: 'POST' });
+    const res = await fetch(apiUrl('/api/account/reset'), { method: 'POST' });
     const data = await res.json();
     if (!res.ok || !data.ok) throw new Error(data.error || '重置失败');
     state.account = null;
     state.team = null;
     state.setupRequired = true;
     state.authenticated = false;
-    authNameInput.value = 'Image Studio';
+    authNameInput.value = 'LemonGir Canvas';
     authEmailInput.value = 'local@image.studio';
     authPasswordInput.value = '';
     setAccountMessage(authMessage, '已重置。现在可以创建新的本地账户。', 'success');
@@ -681,7 +691,7 @@ async function handleAuthSubmit(e) {
 
 async function handleLogout() {
   try {
-    await fetch('/api/account/logout', { method: 'POST' });
+    await fetch(apiUrl('/api/account/logout'), { method: 'POST' });
   } catch (_error) {
     // Local logout should still clear the UI if the server is unreachable.
   }
@@ -698,7 +708,7 @@ async function handleProfileSubmit(e) {
   e.preventDefault();
   setAccountMessage(profileMessage, '保存中...', '');
   try {
-    const res = await fetch('/api/account/profile', {
+    const res = await fetch(apiUrl('/api/account/profile'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -759,7 +769,7 @@ function renderTeamDrawer() {
   teamDrawerBody.innerHTML = `
     <div class="team-summary-card">
       <span>团队空间</span>
-      <strong>${escapeHtml(state.team.name || 'Image Studio Team')}</strong>
+      <strong>${escapeHtml(state.team.name || 'LemonGir Canvas')}</strong>
       <p>${escapeHtml(state.team.plan || 'Local')} · ${members.length || 1} 位成员</p>
     </div>
     <div class="team-member-list">
@@ -771,7 +781,7 @@ function renderTeamDrawer() {
 function renderContactDrawer() {
   contactServiceUrl.textContent = location.origin;
   contactOutputDir.textContent = state.projectAssets.outputsDir || '读取中...';
-  fetch('/api/health')
+  fetch(apiUrl('/api/health'))
     .then(res => res.json())
     .then(data => {
       if (data.outputsDir) contactOutputDir.textContent = data.outputsDir;
@@ -1155,7 +1165,7 @@ function renderCanvasAgentAssets() {
       ${items.map(item => {
         const active = state.canvas.activeImage?.nodeId === item.nodeId && Number(state.canvas.activeImage?.fileIndex) === item.fileIndex;
         return `<button type="button" class="canvas-agent-asset${active ? ' active' : ''}" data-agent-asset-node="${escapeAttr(item.nodeId)}" data-agent-asset-index="${item.fileIndex}" title="${escapeAttr(item.file.name || '结果图')}">
-          <img src="${escapeAttr(item.file.url)}" alt="${escapeAttr(item.file.name || '结果图')}" />
+          <img src="${escapeAttr(toAppUrl(item.file.url))}" alt="${escapeAttr(item.file.name || '结果图')}" />
         </button>`;
       }).join('')}
     </div>
@@ -1655,12 +1665,12 @@ function canvasNodeBodyHtml(node) {
       <div class="canvas-result-images">${files.map((file, index) => {
         const selected = active?.nodeId === node.id && Number(active.fileIndex) === index;
         return `<div class="canvas-result-image-shell${selected ? ' active' : ''}">
-          <button type="button" class="canvas-result-image-btn${selected ? ' active' : ''}" data-canvas-select-result="${index}" title="选择图片进行二次编辑"><img src="${escapeAttr(file.url)}" alt="${escapeAttr(file.name)}" /></button>
+          <button type="button" class="canvas-result-image-btn${selected ? ' active' : ''}" data-canvas-select-result="${index}" title="选择图片进行二次编辑"><img src="${escapeAttr(toAppUrl(file.url))}" alt="${escapeAttr(file.name)}" /></button>
           ${canvasImageEditorOverlayHtml(node, index)}
         </div>`;
       }).join('')}</div>
       ${canvasResultEditWorkbenchHtml(node)}
-      <div class="canvas-result-actions">${files.map((file, index) => `<a href="${escapeAttr(file.url)}" target="_blank" rel="noreferrer">查看</a><button type="button" data-canvas-select-result="${index}">画布编辑</button><button type="button" data-canvas-reference-result="${index}">作为参考图</button>`).join('')}</div>
+      <div class="canvas-result-actions">${files.map((file, index) => `<a href="${escapeAttr(toAppUrl(file.url))}" target="_blank" rel="noreferrer">查看</a><button type="button" data-canvas-select-result="${index}">画布编辑</button><button type="button" data-canvas-reference-result="${index}">作为参考图</button>`).join('')}</div>
       <div class="canvas-node-status success">${escapeHtml(node.status || `${files.length} 张结果`)}</div>
     `;
   }
@@ -3144,7 +3154,7 @@ async function importCanvasAssetsToCanvasInternal(options = {}) {
 
 async function fetchProjectAssets({ force = false } = {}) {
   if (state.projectAssets.loaded && !force) return state.projectAssets;
-  const res = await fetch('/api/outputs');
+  const res = await fetch(apiUrl('/api/outputs'));
   const data = await res.json();
   if (!res.ok || !data.ok) throw new Error(data.detail || data.error || '读取输出失败');
   const generated = (data.files || [])
@@ -3244,7 +3254,7 @@ function renderProjectPickerItem(file) {
   const title = projectAssetTitle(file);
   const selected = state.projectPickerSelectedIds.has(id);
   return `<button type="button" class="project-picker-item${selected ? ' selected' : ''}" data-project-picker-asset="${escapeAttr(id)}" aria-pressed="${selected ? 'true' : 'false'}">
-    <img src="${escapeAttr(file.url || '')}" alt="${escapeAttr(title)}" />
+    <img src="${escapeAttr(toAppUrl(file.url || ''))}" alt="${escapeAttr(title)}" />
     <span class="project-picker-check">✓</span>
     <strong>${escapeHtml(title)}</strong>
   </button>`;
@@ -3372,14 +3382,14 @@ function renderProjectImageCard(file, source) {
   const cardId = projectAssetDomId(source, file);
   return `<article class="project-card" data-project-card="${escapeAttr(cardId)}">
     <button type="button" class="project-card-preview" data-project-preview="${escapeAttr(cardId)}" title="预览图片">
-      ${file.url ? `<img src="${escapeAttr(file.url)}" alt="${escapeAttr(title)}" />` : '<div class="project-card-placeholder">图片</div>'}
+      ${file.url ? `<img src="${escapeAttr(toAppUrl(file.url))}" alt="${escapeAttr(title)}" />` : '<div class="project-card-placeholder">图片</div>'}
     </button>
     <div class="project-card-meta">
       <strong>${escapeHtml(title)}</strong>
       <span>${escapeHtml(meta)}</span>
       ${prompt ? `<p>${escapeHtml(prompt)}</p>` : ''}
     </div>
-    <button type="button" data-project-import="${escapeAttr(source)}" data-project-url="${escapeAttr(file.url || '')}" data-project-name="${escapeAttr(file.name || '')}" data-upload-index="${file.localFileIndex ?? ''}" data-project-title="${escapeAttr(title)}">加入画布</button>
+    <button type="button" data-project-import="${escapeAttr(source)}" data-project-url="${escapeAttr(toAppUrl(file.url || ''))}" data-project-name="${escapeAttr(file.name || '')}" data-upload-index="${file.localFileIndex ?? ''}" data-project-title="${escapeAttr(title)}">加入画布</button>
   </article>`;
 }
 
@@ -3517,7 +3527,7 @@ function openProjectPreview(assetId) {
   projectPreviewMedia.classList.add('loading');
   projectPreviewMedia.innerHTML = `
     <div class="project-preview-loading">图片加载中...</div>
-    <img src="${escapeAttr(file.url)}" alt="${escapeAttr(title)}" decoding="async" />
+    <img src="${escapeAttr(toAppUrl(file.url))}" alt="${escapeAttr(title)}" decoding="async" />
   `;
   const previewImg = projectPreviewMedia.querySelector('img');
   const isCurrentPreview = () => projectPreviewMedia.dataset.previewKey === previewKey;
@@ -3534,7 +3544,7 @@ function openProjectPreview(assetId) {
       <div class="project-preview-fallback">
         <strong>图片预览加载失败</strong>
         <span>可能是本地文件被移动、浏览器缓存失效，或图片地址暂时不可访问。</span>
-        <a href="${escapeAttr(file.url)}" target="_blank" rel="noreferrer">在新窗口打开</a>
+        <a href="${escapeAttr(toAppUrl(file.url))}" target="_blank" rel="noreferrer">在新窗口打开</a>
       </div>
     `;
   };
@@ -3549,7 +3559,7 @@ function openProjectPreview(assetId) {
   projectPreviewPrompt.textContent = prompt || '暂无生成描述。';
   projectPreviewMeta.textContent = projectAssetMeta(file);
   projectPreviewCopyPromptBtn.disabled = !prompt;
-  projectPreviewDownloadLink.href = file.url;
+  projectPreviewDownloadLink.href = toAppUrl(file.url);
   projectPreviewDownloadLink.download = file.name || title;
   projectPreviewBackdrop.hidden = false;
   document.body.classList.add('project-preview-open');
@@ -3729,7 +3739,7 @@ async function runCanvasImageEdit(nodeId) {
   try {
     const imageFile = await fetchCanvasResultAsFile(fileMeta);
     formData.append('images', imageFile);
-    const response = await fetch('/api/generate', { method: 'POST', body: formData });
+    const response = await fetch(apiUrl('/api/generate'), { method: 'POST', body: formData });
     const data = await response.json();
     if (!response.ok || !data.ok) throw new Error(formatGenerateError(data));
     const editedNode = addCanvasNode('result', {
@@ -3839,7 +3849,7 @@ async function runCanvasGenerate(generateNodeId) {
   setGenerating(true);
   updateCanvasGenerateStatus(generateNode, '生成中...', '');
   try {
-    const response = await fetch('/api/generate', { method: 'POST', body: formData });
+    const response = await fetch(apiUrl('/api/generate'), { method: 'POST', body: formData });
     const data = await response.json();
     if (!response.ok || !data.ok) {
       throw new Error(formatGenerateError(data));
@@ -3877,7 +3887,7 @@ async function runCanvasPromptOptimize(nodeId) {
 
   updateCanvasNodeStatus(node, '优化中...', 'loading');
   try {
-    const res = await fetch('/api/prompt-assist', {
+    const res = await fetch(apiUrl('/api/prompt-assist'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -4330,7 +4340,7 @@ function revokeUrls(urls) {
 
 async function loadProviders() {
   try {
-    const res = await fetch('/api/providers');
+    const res = await fetch(apiUrl('/api/providers'));
     const data = await res.json();
     if (!data.ok) throw new Error('加载失败');
 
@@ -4642,7 +4652,7 @@ function clamp(value, min, max) {
 
 async function loadPresets() {
   try {
-    const res = await fetch('/api/presets');
+    const res = await fetch(apiUrl('/api/presets'));
     const data = await res.json();
     if (!data.ok) throw new Error('加载失败');
     renderPresets(data.categories || []);
@@ -4688,7 +4698,7 @@ async function handleQuickEnhance() {
   }
   wandToolBtn.classList.add('active');
   try {
-    const res = await fetch('/api/prompt-assist', {
+    const res = await fetch(apiUrl('/api/prompt-assist'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -4722,7 +4732,7 @@ async function runPromptAssist(action) {
   };
   assistOutput.value = '生成中...';
   try {
-    const res = await fetch('/api/prompt-assist', {
+    const res = await fetch(apiUrl('/api/prompt-assist'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -4740,7 +4750,7 @@ async function runPromptAssist(action) {
 async function checkHealth() {
   if (!statusDot) return;
   try {
-    const res = await fetch('/api/health');
+    const res = await fetch(apiUrl('/api/health'));
     const data = await res.json();
     if (data.ok) {
       statusDot.title = `服务正常 · ${data.promptLlm?.model || ''}`;
@@ -4757,7 +4767,7 @@ async function checkHealth() {
 
 async function loadLogs() {
   try {
-    const res = await fetch('/api/logs');
+    const res = await fetch(apiUrl('/api/logs'));
     const data = await res.json();
     logOutput.textContent = data.tail || '日志为空';
   } catch (e) {

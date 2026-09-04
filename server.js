@@ -279,7 +279,7 @@ app.get('/api/outputs', (_req, res) => {
         return {
           name,
           path: filePath,
-          url: `/outputs/${name}`,
+          url: `outputs/${name}`,
           kind: 'image',
           size: stat.size,
           mtimeMs: stat.mtimeMs,
@@ -298,7 +298,7 @@ app.get('/api/editor/config', (_req, res) => {
   const iopaintUrl = (process.env.IOPAINT_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '');
   res.json({
     ok: true,
-    miniPaintUrl: '/vendor/minipaint/index.html',
+    miniPaintUrl: 'vendor/minipaint/index.html',
     iopaintUrl,
     outputsDir,
   });
@@ -397,7 +397,7 @@ app.post('/api/iopaint/inpaint', async (req, res) => {
       ok: true,
       outputFile: {
         path: filePath,
-        url: `/outputs/${fileName}`,
+        url: `outputs/${fileName}`,
         name: fileName,
       },
       image: `data:${contentType || 'image/png'};base64,${buffer.toString('base64')}`,
@@ -445,7 +445,7 @@ app.post('/api/editor/save', editorUpload.fields([
     fs.writeFileSync(projectPath, project.buffer);
     projectFile = {
       path: projectPath,
-      url: `/outputs/${projectName}`,
+      url: `outputs/${projectName}`,
       name: projectName,
     };
   }
@@ -463,7 +463,7 @@ app.post('/api/editor/save', editorUpload.fields([
     ok: true,
     outputFile: {
       path: imagePath,
-      url: `/outputs/${imageName}`,
+      url: `outputs/${imageName}`,
       name: imageName,
     },
     projectFile,
@@ -674,7 +674,7 @@ app.post('/api/generate', upload.fields([
 
     const outputFiles = (parsed.saved_files || []).map((filePath, index) => ({
       path: filePath,
-      url: `/outputs/${path.basename(filePath)}`,
+      url: `outputs/${path.basename(filePath)}`,
       name: path.basename(filePath),
       metadata: {
         prompt,
@@ -1038,7 +1038,16 @@ function loadHermesModelConfig() {
   try {
     if (!fs.existsSync(hermesConfigPath)) return {};
     const parsed = yaml.load(fs.readFileSync(hermesConfigPath, 'utf-8')) || {};
-    return parsed.model || {};
+    const model = parsed.model || {};
+    const providerName = String(model.provider || '').replace(/^custom:/i, '').trim().toLowerCase();
+    const provider = (parsed.custom_providers || []).find(item =>
+      String(item?.name || '').trim().toLowerCase() === providerName
+    );
+    return {
+      default: model.default,
+      base_url: provider?.base_url || model.base_url,
+      api_key: provider?.api_key || model.api_key,
+    };
   } catch (_error) {
     return {};
   }

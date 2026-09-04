@@ -433,7 +433,7 @@ async function runErase() {
 
   setBusy(true, '生成蒙版中');
   try {
-    const status = await fetch('/api/iopaint/status').then(res => res.json());
+    const status = await fetch(apiUrl('/api/iopaint/status')).then(res => res.json());
     const prompt = document.getElementById('erasePrompt')?.value.trim()
       || '擦除选区内容并自然补全背景，保持原图风格、透视、光照和构图，不改变选区外的任何内容。';
 
@@ -451,7 +451,7 @@ async function runErase() {
     }
 
     setBusy(true, '本地擦除中');
-    const res = await fetch('/api/iopaint/inpaint', {
+    const res = await fetch(apiUrl('/api/iopaint/inpaint'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ image, mask, prompt, timeout: 600 }),
@@ -550,7 +550,7 @@ async function runImageEditTask({ prompt, maskDataUrl = null, background = 'opaq
     }
 
     appendGenerationSettings(formData, { size, background });
-    const res = await fetch('/api/generate', { method: 'POST', body: formData });
+    const res = await fetch(apiUrl('/api/generate'), { method: 'POST', body: formData });
     const data = await res.json();
     if (!res.ok || !data.ok) throw new Error(formatGenerateError(data));
 
@@ -567,7 +567,7 @@ async function runImageEditTask({ prompt, maskDataUrl = null, background = 'opaq
 async function applyGeneratedResult(data) {
   const file = data.outputFiles?.[0];
   if (!file?.url) throw new Error('接口成功但没有返回图片文件。');
-  await loadImage(file.url);
+  await loadImage(toAppUrl(file.url));
   state.selection = null;
   state.layers = [{ id: 'image', name: '整张图片', type: 'image', bounds: null, visible: true }];
   state.selectedLayerId = 'image';
@@ -585,7 +585,7 @@ async function saveCurrentImage() {
     formData.append('sourceName', imageName);
     formData.append('image', blob, 'edited.png');
 
-    const res = await fetch('/api/editor/save', { method: 'POST', body: formData });
+    const res = await fetch(apiUrl('/api/editor/save'), { method: 'POST', body: formData });
     const data = await res.json();
     if (!res.ok || !data.ok) throw new Error(data.detail || data.error || '保存失败');
     setStatus(`已保存到 Image Studio：${data.outputFile.name}`, 'ok');
@@ -818,7 +818,7 @@ function getAdvancedEditorUrl() {
   const next = new URLSearchParams();
   if (imageUrl) next.set('image', imageUrl);
   if (imageName) next.set('name', imageName);
-  return `/vendor/minipaint/index.html?${next.toString()}`;
+  return toAppUrl(`/vendor/minipaint/index.html?${next.toString()}`);
 }
 
 function setBusy(isBusy, text = '处理中') {
