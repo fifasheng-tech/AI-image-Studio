@@ -437,13 +437,11 @@ body.project-mode .command-palette {
 body.canvas-mode .canvas-workspace {
   display: grid;
 }
-body.project-mode .project-workspace {
-  display: block;
-}
 
+/* Canvas left rail: compact, aligned Apple-style tools */
 .canvas-workspace {
   display: none;
-  grid-template-columns: 64px minmax(0, 1fr) 320px;
+  grid-template-columns: 74px minmax(0, 1fr) 320px;
   gap: 10px;
   height: 100vh;
   height: 100dvh;
@@ -451,68 +449,96 @@ body.project-mode .project-workspace {
   transition: grid-template-columns 0.34s var(--ease-spring), gap 0.34s var(--ease-spring);
 }
 .canvas-workspace.agent-collapsed {
-  grid-template-columns: 64px minmax(0, 1fr) 34px;
+  grid-template-columns: 74px minmax(0, 1fr) 34px;
   gap: 6px;
 }
 
 .canvas-sidebar {
-  width: 64px;
+  width: 74px;
+  min-width: 74px;
   padding: 8px 7px;
-  border-radius: 18px;
+  border-radius: 20px;
   align-self: stretch;
-  overflow: visible;
+  overflow: hidden auto;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
   background: rgba(255, 255, 255, 0.78);
   box-shadow: 0 1px 2px rgba(29, 33, 41, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  scrollbar-width: none;
 }
+.canvas-sidebar::-webkit-scrollbar { width: 0; display: none; }
 
-.canvas-panel-title {
-  width: 42px;
-  height: 42px;
-  margin: 0 0 8px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: #1d1d1f;
-  color: white;
-  font-size: 0;
-  font-weight: 900;
+.canvas-sidebar-head {
+  padding: 0;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(245, 51, 63, 0.16);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(245, 51, 63, 0.24);
+  cursor: pointer;
 }
-.canvas-panel-title::before {
-  content: "+";
-  font-size: 24px;
-  line-height: 1;
+.canvas-sidebar-head svg { width: 21px; height: 21px; display: block; }
+
+.canvas-sidebar-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+}
+.canvas-sidebar-divider {
+  width: 28px;
+  height: 1px;
+  flex: 0 0 auto;
+  margin: 2px 0;
+  background: rgba(29, 33, 41, 0.1);
+}
+.canvas-sidebar-foot {
+  margin-top: auto;
+  padding: 4px 0 1px;
+  color: var(--text-tertiary);
+  font: 700 9px/1.1 var(--font);
+  letter-spacing: 0.04em;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .canvas-tool-btn {
   position: relative;
-  width: 44px;
-  height: 44px;
-  min-height: 44px;
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
+  min-height: 46px;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   margin: 0;
   border: 1px solid rgba(0, 0, 0, 0.07);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.55);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.58);
   color: var(--text-primary);
-  font: 700 13px/1.2 var(--font);
   cursor: pointer;
-  text-align: center;
   overflow: visible;
   transition: transform var(--duration-fast) ease, background var(--duration-fast) ease, border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
-.canvas-tool-btn:hover {
+.canvas-tool-btn:hover,
+.canvas-tool-btn:focus-visible {
   transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.82);
-  border-color: rgba(245, 51, 63, 0.18);
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(245, 51, 63, 0.2);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.09);
+  outline: none;
 }
+.canvas-tool-btn:active { transform: translateY(0); }
 .canvas-tool-btn::after {
   content: attr(data-tooltip);
   position: absolute;
@@ -545,29 +571,32 @@ body.project-mode .project-workspace {
   transition: opacity var(--duration-fast) ease;
 }
 .canvas-tool-btn:hover::after,
-.canvas-tool-btn:hover::before {
-  opacity: 1;
-}
-.canvas-tool-btn:hover::after {
-  transform: translateY(-50%) translateX(0);
-}
+.canvas-tool-btn:hover::before { opacity: 1; }
+.canvas-tool-btn:hover::after { transform: translateY(-50%) translateX(0); }
 .canvas-tool-icon {
   width: 30px;
   height: 30px;
   border-radius: 10px;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   background: var(--accent-soft);
   color: var(--accent);
-  font-size: 13px;
-  font-weight: 900;
   flex: 0 0 auto;
 }
 .canvas-tool-icon svg {
-  width: 18px;
-  height: 18px;
+  width: 19px;
+  height: 19px;
+  display: block;
   pointer-events: none;
+}
+.canvas-tool-btn.canvas-action-btn .canvas-tool-icon {
+  background: rgba(29, 33, 41, 0.06);
+  color: var(--text-secondary);
+}
+.canvas-tool-btn.danger .canvas-tool-icon {
+  background: rgba(245, 51, 63, 0.1);
+  color: var(--accent);
 }
 .canvas-tool-label {
   position: absolute;
@@ -576,9 +605,6 @@ body.project-mode .project-workspace {
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
-}
-.canvas-panel-note {
-  display: none;
 }
 
 .canvas-stage-wrap {
@@ -4054,7 +4080,7 @@ body.chat-mode .composer-reference-tile:hover {
   .mode-switch { position: static; transform: none; }
   .mode-switch-btn { min-width: 50px; }
   .canvas-workspace {
-    grid-template-columns: 56px minmax(0, 1fr);
+    grid-template-columns: 64px minmax(0, 1fr);
     grid-template-rows: minmax(420px, 1fr) auto;
     padding: calc(var(--top-bar-height) + 8px) 8px 8px;
     gap: 8px;
@@ -4063,7 +4089,8 @@ body.chat-mode .composer-reference-tile:hover {
   .canvas-sidebar {
     grid-column: 1;
     grid-row: 1;
-    width: 56px;
+    width: 64px;
+    min-width: 64px;
     min-height: 0;
     display: flex;
     flex-direction: column;
@@ -4871,3 +4898,4 @@ body.canvas-mode .canvas-workspace.agent-collapsed .canvas-agent-panel.collapsed
 }
 
 .result-ai-content { flex: 1; min-width: 0; }
+\n:root[data-theme="dark"] .canvas-tool-btn {\n  border-color: rgba(255, 255, 255, 0.08);\n  background: rgba(255, 255, 255, 0.04);\n}\n\n:root[data-theme="dark"] .canvas-tool-btn:hover,\n:root[data-theme="dark"] .canvas-tool-btn:focus-visible {\n  background: rgba(255, 255, 255, 0.1);\n}\n\n:root[data-theme="dark"] .canvas-tool-btn.canvas-action-btn .canvas-tool-icon {\n  background: rgba(255, 255, 255, 0.08);\n  color: rgba(255, 255, 255, 0.72);\n}\n\n:root[data-theme="dark"] .canvas-sidebar-divider {\n  background: rgba(255, 255, 255, 0.12);\n}\n

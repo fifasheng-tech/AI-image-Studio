@@ -118,6 +118,13 @@ const addCanvasOptimizeBtn = $('addCanvasOptimizeBtn');
 const addCanvasImageBtn = $('addCanvasImageBtn');
 const addCanvasParamsBtn = $('addCanvasParamsBtn');
 const addCanvasGenerateBtn = $('addCanvasGenerateBtn');
+const addCanvasResultBtn = $('addCanvasResultBtn');
+const addCanvasUploadBtn = $('addCanvasUploadBtn');
+const addCanvasProjectBtn = $('addCanvasProjectBtn');
+const addCanvasArrangeBtn = $('addCanvasArrangeBtn');
+const addCanvasFitBtn = $('addCanvasFitBtn');
+const addCanvasCenterBtn = $('addCanvasCenterBtn');
+const addCanvasClearBtn = $('addCanvasClearBtn');
 const canvasImageInput = $('canvasImageInput');
 const canvasFolderInput = $('canvasFolderInput');
 const canvasAddNodeBtn = $('canvasAddNodeBtn');
@@ -366,7 +373,14 @@ addCanvasTemplateBtn.addEventListener('click', () => addCanvasNode('template'));
 addCanvasOptimizeBtn.addEventListener('click', () => addCanvasNode('optimize'));
 addCanvasImageBtn.addEventListener('click', () => addCanvasNode('image'));
 addCanvasParamsBtn.addEventListener('click', () => addCanvasNode('params'));
+addCanvasResultBtn.addEventListener('click', () => addCanvasNode('result'));
 addCanvasGenerateBtn.addEventListener('click', () => addCanvasNode('generate'));
+addCanvasUploadBtn.addEventListener('click', () => canvasImageInput.click());
+addCanvasProjectBtn.addEventListener('click', () => openProjectPicker('canvas'));
+addCanvasArrangeBtn.addEventListener('click', arrangeCanvasNodes);
+addCanvasFitBtn.addEventListener('click', fitCanvasToNodes);
+addCanvasCenterBtn.addEventListener('click', resetCanvasView);
+addCanvasClearBtn.addEventListener('click', clearCanvasBoard);
 document.querySelectorAll('[data-canvas-tool]').forEach(btn => {
   btn.addEventListener('dragstart', (e) => {
     state.canvas.dragToolType = btn.dataset.canvasTool;
@@ -379,6 +393,7 @@ document.querySelectorAll('[data-canvas-tool]').forEach(btn => {
     }, 0);
   });
 });
+document.querySelector('.canvas-sidebar-head')?.addEventListener('click', () => openCanvasNodeMenuAtViewportCenter());
 canvasAddNodeBtn.addEventListener('click', () => openCanvasNodeMenuAtViewportCenter());
 canvasImportOutputBtn.addEventListener('click', (e) => {
   e.stopPropagation();
@@ -437,11 +452,23 @@ canvasStageWrap.addEventListener('drop', handleCanvasDrop);
 canvasStageWrap.addEventListener('dblclick', handleCanvasDoubleClick);
 canvasStageWrap.addEventListener('wheel', handleCanvasWheel, { passive: false });
 canvasStageWrap.addEventListener('pointerdown', startCanvasPan);
+canvasStageWrap.addEventListener('lostpointercapture', () => {
+  if (state.canvas.pointer?.kind === 'pan') {
+    state.canvas.pointer = null;
+    canvasStageWrap.classList.remove('panning');
+  }
+});
 document.addEventListener('pointerdown', closeCanvasNodeMenuFromOutside);
 document.addEventListener('pointerdown', closeUserMenuFromOutside);
 document.addEventListener('pointermove', handleCanvasPointerMove);
 document.addEventListener('pointerup', finishCanvasConnection);
 document.addEventListener('pointercancel', finishCanvasConnection);
+window.addEventListener('blur', () => {
+  if (state.canvas.pointer?.kind === 'pan') {
+    state.canvas.pointer = null;
+    canvasStageWrap.classList.remove('panning');
+  }
+});
 window.addEventListener('resize', renderCanvasConnections);
 window.addEventListener('resize', scheduleProjectMasonryLayout);
 window.addEventListener('resize', resizePromptInput);
@@ -2485,6 +2512,20 @@ function startCanvasPan(e) {
 function handleCanvasPointerMove(e) {
   const pointer = state.canvas.pointer;
   if (!pointer) return;
+  pointer.lastClientX = e.clientX;
+  pointer.lastClientY = e.clientY;
+  if (!state.canvas.pointerFrame) {
+    state.canvas.pointerFrame = requestAnimationFrame(() => {
+      state.canvas.pointerFrame = null;
+      applyCanvasPointerMove();
+    });
+  }
+}
+
+function applyCanvasPointerMove() {
+  const pointer = state.canvas.pointer;
+  if (!pointer || pointer.lastClientX == null || pointer.lastClientY == null) return;
+  const e = { clientX: pointer.lastClientX, clientY: pointer.lastClientY };
   if (pointer.kind === 'drag') {
     const node = getCanvasNode(pointer.nodeId);
     if (!node) return;
@@ -2569,8 +2610,16 @@ function startCanvasConnection(e, nodeId, portType) {
 function finishCanvasConnection(e) {
   const pointer = state.canvas.pointer;
   if (!pointer) return;
+  if (state.canvas.pointerFrame) {
+    cancelAnimationFrame(state.canvas.pointerFrame);
+    state.canvas.pointerFrame = null;
+  }
   if (pointer.kind === 'connect') {
-    const target = findCanvasConnectionTarget(e.clientX, e.clientY, pointer.nodeId);
+    const target = findCanvasConnectionTarget(
+      e.clientX ?? pointer.lastClientX ?? 0,
+      e.clientY ?? pointer.lastClientY ?? 0,
+      pointer.nodeId,
+    );
     if (target?.nodeId) {
       connectCanvasNodes(pointer.nodeId, target.nodeId);
     } else {
@@ -2941,6 +2990,61 @@ function clampCanvasViewport() {
   viewport.y = Math.min(maxY, Math.max(minY, viewport.y));
 }
 
+function arrangeCanvasNodes() {
+  if (!state.canvas.nodes.length) return;
+  const columns = Math.max(1, Math.min(4, Math.ceil(Math.sqrt(state.canvas.nodes.length))));
+  state.canvas.nodes.forEach((node, index) => {
+    node.x = 120 + (index % columns) * 330;
+    node.y = 120 + Math.floor(index / columns) * 280;
+  });
+  fitCanvasToNodes();
+}
+
+function fitCanvasToNodes() {
+  const nodes = state.canvas.nodes;
+  if (!nodes.length) {
+    resetCanvasView();
+    return;
+  }
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  nodes.forEach((node) => {
+    const width = getCanvasNodeWidth(node);
+    const height = getCanvasNodeHeight(node);
+    minX = Math.min(minX, node.x);
+    minY = Math.min(minY, node.y);
+    maxX = Math.max(maxX, node.x + width);
+    maxY = Math.max(maxY, node.y + height);
+  });
+  const wrapRect = canvasStageWrap.getBoundingClientRect();
+  const padding = 72;
+  const scaleX = (wrapRect.width - padding * 2) / Math.max(1, maxX - minX);
+  const scaleY = (wrapRect.height - padding * 2) / Math.max(1, maxY - minY);
+  const scale = Math.min(2.2, Math.max(0.35, Math.min(scaleX, scaleY)));
+  state.canvas.viewport.scale = scale;
+  state.canvas.viewport.x = (wrapRect.width - (maxX - minX) * scale) / 2 - minX * scale;
+  state.canvas.viewport.y = (wrapRect.height - (maxY - minY) * scale) / 2 - minY * scale;
+  clampCanvasViewport();
+  renderCanvasViewport();
+  renderCanvasConnections();
+}
+
+function clearCanvasBoard() {
+  const count = state.canvas.nodes.length;
+  if (!count || !window.confirm(`确定清空画布上的 ${count} 个节点吗？`)) return;
+  state.canvas.nodes.forEach((node) => {
+    if (node.urls) revokeUrls(node.urls);
+  });
+  state.canvas.nodes = [];
+  state.canvas.edges = [];
+  state.canvas.selectedNodeId = null;
+  state.canvas.selectedEdgeKey = null;
+  state.canvas.activeImage = null;
+  renderCanvas();
+}
+
 function resetCanvasView() {
   state.canvas.viewport = { x: 0, y: 0, scale: 1 };
   renderCanvasViewport();
@@ -3121,7 +3225,9 @@ async function importCanvasAssetsToCanvasInternal(options = {}) {
 
 async function fetchProjectAssets({ force = false } = {}) {
   if (state.projectAssets.loaded && !force) return state.projectAssets;
-  const res = await fetch(apiUrl('/api/outputs'));
+  const res = await fetch(apiUrl('/api/outputs'), {
+    headers: { 'x-newapi-uid': String(getNewApiUid() || '') },
+  });
   const data = await res.json();
   if (!res.ok || !data.ok) throw new Error(data.detail || data.error || '读取输出失败');
   const generated = (data.files || [])

@@ -432,13 +432,34 @@ app.get('/api/session', async (req, res) => {
   });
 });
 
-app.get('/api/outputs', (_req, res) => {
+app.get('/api/outputs', async (req, res) => {
   try {
+    const newApiSession = await getNewApiSession(req);
+    if (!newApiSession.authenticated || !newApiSession.uid) {
+      return res.status(401).json({ ok: false, error: newApiSession.reason || '请先登录中转站账号', requireLogin: true });
+    }
+    const today = outputDayString(Date.now());
+    fs.readdirSync(outputsDir)
+      .filter(name => /\.(png|jpe?g|webp|gif)$/i.test(name))
+      .forEach(name => {
+        const filePath = path.join(outputsDir, name);
+        const stat = fs.statSync(filePath);
+        const metadata = readOutputMetadata(filePath);
+        if ((metadata?.outputDay || outputDayString(stat.mtimeMs)) !== today) {
+          try {
+            fs.rmSync(filePath, { force: true });
+            fs.rmSync(outputMetadataPath(filePath), { force: true });
+          } catch (cleanupError) {
+            appendLog({ type: 'output-cleanup-error', name, error: cleanupError.message });
+          }
+        }
+      });
     const files = fs.readdirSync(outputsDir)
       .filter(name => /\.(png|jpe?g|webp|gif)$/i.test(name))
       .map(name => {
         const filePath = path.join(outputsDir, name);
         const stat = fs.statSync(filePath);
+        const metadata = readOutputMetadata(filePath);
         return {
           name,
           path: filePath,
@@ -446,12 +467,15 @@ app.get('/api/outputs', (_req, res) => {
           kind: 'image',
           size: stat.size,
           mtimeMs: stat.mtimeMs,
-          metadata: readOutputMetadata(filePath),
+          metadata,
+          userId: Number(metadata?.userId || 0),
+          outputDay: metadata?.outputDay || outputDayString(stat.mtimeMs),
         };
       })
+      .filter(file => file.userId === newApiSession.uid && file.outputDay === today)
       .sort((a, b) => b.mtimeMs - a.mtimeMs)
       .slice(0, 60);
-    res.json({ ok: true, outputsDir, files });
+    res.json({ ok: true, outputsDir, date: today, userId: newApiSession.uid, files });
   } catch (error) {
     res.status(500).json({ ok: false, error: '读取输出目录失败', detail: error.message });
   }
@@ -888,7 +912,12 @@ app.post('/api/generate', upload.fields([
       revisedPrompts: parsed.revised_prompts || [],
       retryAttempts,
     });
-    outputFiles.forEach((file) => writeOutputMetadata(file.path, file.metadata));
+    outputFiles.forEach((file) => writeOutputMetadata(file.path, {
+      ...(file.metadata || {}),
+      userId: newApiSession.uid,
+      outputDay: outputDayString(),
+      createdAt: new Date().toISOString(),
+    }));
 
     return res.json({
       ok: true,
@@ -1255,6 +1284,15 @@ function appendLog(payload) {
 
 function outputMetadataPath(filePath) {
   return `${filePath}.meta.json`;
+}
+
+function outputDayString(value = Date.now()) {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date(value));
 }
 
 function readOutputMetadata(filePath) {

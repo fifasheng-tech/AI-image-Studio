@@ -76,32 +76,67 @@
 
       <section class="canvas-workspace" id="canvasWorkspace" aria-label="画布模式">
         <aside class="canvas-sidebar glass" aria-label="画布节点工具栏">
-          <div class="canvas-panel-title">节点</div>
-          <button type="button" class="canvas-tool-btn" id="addCanvasTextBtn" draggable="true" data-canvas-tool="text" data-tooltip="文本节点" title="文本节点" aria-label="添加文本节点">
-            <span class="canvas-tool-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg></span>
-            <span class="canvas-tool-label">文本节点</span>
+          <button type="button" class="canvas-sidebar-head" title="添加节点" aria-label="添加节点">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
           </button>
-          <button type="button" class="canvas-tool-btn" id="addCanvasTemplateBtn" draggable="true" data-canvas-tool="template" data-tooltip="模板节点" title="模板节点" aria-label="添加模板节点">
-            <span class="canvas-tool-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17h7"/><path d="M14 21h7"/></svg></span>
-            <span class="canvas-tool-label">模板节点</span>
-          </button>
-          <button type="button" class="canvas-tool-btn" id="addCanvasOptimizeBtn" draggable="true" data-canvas-tool="optimize" data-tooltip="Prompt 优化" title="Prompt 优化" aria-label="添加 Prompt 优化节点">
-            <span class="canvas-tool-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="M17.8 6.2l1.4-1.4"/><path d="M10.8 13.2l-1.4 1.4"/><path d="M10.8 4.8l-1.4-1.4"/><path d="M17.8 11.8l1.4 1.4"/><path d="M13 7l4 4"/><path d="M4 20l9-9"/></svg></span>
-            <span class="canvas-tool-label">Prompt 优化</span>
-          </button>
-          <button type="button" class="canvas-tool-btn" id="addCanvasImageBtn" draggable="true" data-canvas-tool="image" data-tooltip="参考图节点" title="参考图节点" aria-label="添加参考图节点">
-            <span class="canvas-tool-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-4-4L5 21"/></svg></span>
-            <span class="canvas-tool-label">参考图节点</span>
-          </button>
-          <button type="button" class="canvas-tool-btn" id="addCanvasParamsBtn" draggable="true" data-canvas-tool="params" data-tooltip="参数/服务商" title="参数/服务商" aria-label="添加参数服务商节点">
-            <span class="canvas-tool-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></span>
-            <span class="canvas-tool-label">参数/服务商</span>
-          </button>
-          <button type="button" class="canvas-tool-btn" id="addCanvasGenerateBtn" draggable="true" data-canvas-tool="generate" data-tooltip="生成节点" title="生成节点" aria-label="添加生成节点">
-            <span class="canvas-tool-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/><path d="M19 12h3"/></svg></span>
-            <span class="canvas-tool-label">生成节点</span>
-          </button>
-          <div class="canvas-panel-note">节点可拖入画布。滚轮或触控板平移，按住 Cmd/Ctrl/Alt 再滚动可缩放；从右侧端口拖到目标节点附近会自动吸附连线。</div>
+          <div class="canvas-sidebar-group">
+            <button type="button" class="canvas-tool-btn" id="addCanvasImageBtn" draggable="true" data-canvas-tool="image" data-tooltip="参考图节点" title="参考图节点" aria-label="添加参考图节点">
+              <span class="canvas-tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 15.5l-4.2-4.2L5 21"/></svg></span>
+              <span class="canvas-tool-label">参考图</span>
+            </button>
+            <button type="button" class="canvas-tool-btn" id="addCanvasResultBtn" draggable="true" data-canvas-tool="result" data-tooltip="结果节点" title="结果节点" aria-label="添加结果节点">
+              <span class="canvas-tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 15l3-4 2.5 3 2-2.5L18 15"/></svg></span>
+              <span class="canvas-tool-label">结果节点</span>
+            </button>
+            <button type="button" class="canvas-tool-btn" id="addCanvasTextBtn" draggable="true" data-canvas-tool="text" data-tooltip="文本节点" title="文本节点" aria-label="添加文本节点">
+              <span class="canvas-tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6V4h14v2"/><path d="M12 4v16"/><path d="M8 20h8"/></svg></span>
+              <span class="canvas-tool-label">文本节点</span>
+            </button>
+            <button type="button" class="canvas-tool-btn" id="addCanvasTemplateBtn" draggable="true" data-canvas-tool="template" data-tooltip="模板节点" title="模板节点" aria-label="添加模板节点">
+              <span class="canvas-tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><path d="M14 16h7"/><path d="M14 20h4"/></svg></span>
+              <span class="canvas-tool-label">模板节点</span>
+            </button>
+            <button type="button" class="canvas-tool-btn" id="addCanvasOptimizeBtn" draggable="true" data-canvas-tool="optimize" data-tooltip="Prompt 优化" title="Prompt 优化" aria-label="添加 Prompt 优化节点">
+              <span class="canvas-tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13h5L9 22l8.5-11h-5z"/></svg></span>
+              <span class="canvas-tool-label">Prompt 优化</span>
+            </button>
+            <button type="button" class="canvas-tool-btn" id="addCanvasParamsBtn" draggable="true" data-canvas-tool="params" data-tooltip="参数设置" title="参数设置" aria-label="添加参数设置节点">
+              <span class="canvas-tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-6"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 7V3"/><path d="M20 21v-4"/><path d="M20 12V3"/><path d="M1.5 15h5"/><path d="M9.5 7h5"/><path d="M17.5 17h5"/></svg></span>
+              <span class="canvas-tool-label">参数设置</span>
+            </button>
+            <button type="button" class="canvas-tool-btn" id="addCanvasGenerateBtn" draggable="true" data-canvas-tool="generate" data-tooltip="生成节点" title="生成节点" aria-label="添加生成节点">
+              <span class="canvas-tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l14 8-14 8z"/></svg></span>
+              <span class="canvas-tool-label">生成节点</span>
+            </button>
+          </div>
+          <div class="canvas-sidebar-divider" aria-hidden="true"></div>
+          <div class="canvas-sidebar-group">
+            <button type="button" class="canvas-tool-btn canvas-action-btn" id="addCanvasUploadBtn" data-tooltip="上传图片" title="上传图片" aria-label="上传图片到画布">
+              <span class="canvas-tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V5"/><path d="M7.5 9.5L12 5l4.5 4.5"/><path d="M5 19h14"/></svg></span>
+              <span class="canvas-tool-label">上传图片</span>
+            </button>
+            <button type="button" class="canvas-tool-btn canvas-action-btn" id="addCanvasProjectBtn" data-tooltip="项目图片" title="项目图片" aria-label="从项目导入图片">
+              <span class="canvas-tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h3.2l1.3 2H19a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></span>
+              <span class="canvas-tool-label">项目图片</span>
+            </button>
+            <button type="button" class="canvas-tool-btn canvas-action-btn" id="addCanvasArrangeBtn" data-tooltip="整理节点" title="整理节点" aria-label="整理画布节点">
+              <span class="canvas-tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="8" height="6" rx="2"/><rect x="13" y="14" width="8" height="6" rx="2"/><path d="M11 7h3.5a2.5 2.5 0 012.5 2.5V14"/></svg></span>
+              <span class="canvas-tool-label">整理节点</span>
+            </button>
+            <button type="button" class="canvas-tool-btn canvas-action-btn" id="addCanvasFitBtn" data-tooltip="适配视图" title="适配视图" aria-label="适配画布视图">
+              <span class="canvas-tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5h4"/><path d="M20 9V5h-4"/><path d="M4 15v4h4"/><path d="M20 15v4h-4"/></svg></span>
+              <span class="canvas-tool-label">适配视图</span>
+            </button>
+            <button type="button" class="canvas-tool-btn canvas-action-btn" id="addCanvasCenterBtn" data-tooltip="回到中心" title="回到中心" aria-label="回到画布中心">
+              <span class="canvas-tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v3"/><path d="M12 18v3"/><path d="M3 12h3"/><path d="M18 12h3"/></svg></span>
+              <span class="canvas-tool-label">回到中心</span>
+            </button>
+            <button type="button" class="canvas-tool-btn canvas-action-btn danger" id="addCanvasClearBtn" data-tooltip="清空画布" title="清空画布" aria-label="清空画布">
+              <span class="canvas-tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V5h6v2"/><path d="M7 7l1 12h8l1-12"/></svg></span>
+              <span class="canvas-tool-label">清空画布</span>
+            </button>
+          </div>
+          <div class="canvas-sidebar-foot">拖入画布</div>
         </aside>
         <div class="canvas-stage-wrap" id="canvasStageWrap">
           <div class="canvas-toolbar canvas-action-toolbar">
@@ -204,7 +239,7 @@
           <div>
             <div class="project-kicker">Project</div>
             <h2>项目</h2>
-            <p class="project-subtitle">管理最近生成和会话上传的素材，选择图片后可导入回画布继续编排。</p>
+            <p class="project-subtitle">项目管理仅展示你今天生成的图片，次日自动归档清理；会话上传仅保留在当前浏览器会话。</p>
           </div>
           <div class="project-head-actions">
             <div class="project-view-switch" role="group" aria-label="项目展示方式">
@@ -643,6 +678,6 @@
       </div>
     </div>
 
-    <script src="app.js?v=20260905-newapi-auth2"></script>
+    <script src="app.js?v=20260905-canvas-ux3"></script>
   </body>
 </html>
