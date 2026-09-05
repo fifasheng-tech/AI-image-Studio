@@ -118,13 +118,6 @@ const addCanvasOptimizeBtn = $('addCanvasOptimizeBtn');
 const addCanvasImageBtn = $('addCanvasImageBtn');
 const addCanvasParamsBtn = $('addCanvasParamsBtn');
 const addCanvasGenerateBtn = $('addCanvasGenerateBtn');
-const addCanvasResultBtn = $('addCanvasResultBtn');
-const addCanvasUploadBtn = $('addCanvasUploadBtn');
-const addCanvasProjectBtn = $('addCanvasProjectBtn');
-const addCanvasArrangeBtn = $('addCanvasArrangeBtn');
-const addCanvasFitBtn = $('addCanvasFitBtn');
-const addCanvasCenterBtn = $('addCanvasCenterBtn');
-const addCanvasClearBtn = $('addCanvasClearBtn');
 const canvasImageInput = $('canvasImageInput');
 const canvasFolderInput = $('canvasFolderInput');
 const canvasAddNodeBtn = $('canvasAddNodeBtn');
@@ -373,14 +366,7 @@ addCanvasTemplateBtn.addEventListener('click', () => addCanvasNode('template'));
 addCanvasOptimizeBtn.addEventListener('click', () => addCanvasNode('optimize'));
 addCanvasImageBtn.addEventListener('click', () => addCanvasNode('image'));
 addCanvasParamsBtn.addEventListener('click', () => addCanvasNode('params'));
-addCanvasResultBtn.addEventListener('click', () => addCanvasNode('result'));
 addCanvasGenerateBtn.addEventListener('click', () => addCanvasNode('generate'));
-addCanvasUploadBtn.addEventListener('click', () => canvasImageInput.click());
-addCanvasProjectBtn.addEventListener('click', () => openProjectPicker('canvas'));
-addCanvasArrangeBtn.addEventListener('click', arrangeCanvasNodes);
-addCanvasFitBtn.addEventListener('click', fitCanvasToNodes);
-addCanvasCenterBtn.addEventListener('click', resetCanvasView);
-addCanvasClearBtn.addEventListener('click', clearCanvasBoard);
 document.querySelectorAll('[data-canvas-tool]').forEach(btn => {
   btn.addEventListener('dragstart', (e) => {
     state.canvas.dragToolType = btn.dataset.canvasTool;

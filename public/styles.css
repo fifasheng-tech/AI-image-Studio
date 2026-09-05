@@ -441,7 +441,7 @@ body.canvas-mode .canvas-workspace {
 /* Canvas left rail: compact, aligned Apple-style tools */
 .canvas-workspace {
   display: none;
-  grid-template-columns: 74px minmax(0, 1fr) 320px;
+  grid-template-columns: 64px minmax(0, 1fr) 320px;
   gap: 10px;
   height: 100vh;
   height: 100dvh;
@@ -449,13 +449,13 @@ body.canvas-mode .canvas-workspace {
   transition: grid-template-columns 0.34s var(--ease-spring), gap 0.34s var(--ease-spring);
 }
 .canvas-workspace.agent-collapsed {
-  grid-template-columns: 74px minmax(0, 1fr) 34px;
+  grid-template-columns: 64px minmax(0, 1fr) 34px;
   gap: 6px;
 }
 
 .canvas-sidebar {
-  width: 74px;
-  min-width: 74px;
+  width: 64px;
+  min-width: 64px;
   padding: 8px 7px;
   border-radius: 20px;
   align-self: stretch;
@@ -494,37 +494,21 @@ body.canvas-mode .canvas-workspace {
   align-items: center;
   gap: 7px;
 }
-.canvas-sidebar-divider {
-  width: 28px;
-  height: 1px;
-  flex: 0 0 auto;
-  margin: 2px 0;
-  background: rgba(29, 33, 41, 0.1);
-}
-.canvas-sidebar-foot {
-  margin-top: auto;
-  padding: 4px 0 1px;
-  color: var(--text-tertiary);
-  font: 700 9px/1.1 var(--font);
-  letter-spacing: 0.04em;
-  text-align: center;
-  white-space: nowrap;
-}
 
 .canvas-tool-btn {
   position: relative;
-  width: 46px;
-  height: 46px;
-  min-width: 46px;
-  min-height: 46px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   margin: 0;
   border: 1px solid rgba(0, 0, 0, 0.07);
-  border-radius: 15px;
-  background: rgba(255, 255, 255, 0.58);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.55);
   color: var(--text-primary);
   cursor: pointer;
   overflow: visible;
@@ -585,18 +569,10 @@ body.canvas-mode .canvas-workspace {
   flex: 0 0 auto;
 }
 .canvas-tool-icon svg {
-  width: 19px;
-  height: 19px;
+  width: 18px;
+  height: 18px;
   display: block;
   pointer-events: none;
-}
-.canvas-tool-btn.canvas-action-btn .canvas-tool-icon {
-  background: rgba(29, 33, 41, 0.06);
-  color: var(--text-secondary);
-}
-.canvas-tool-btn.danger .canvas-tool-icon {
-  background: rgba(245, 51, 63, 0.1);
-  color: var(--accent);
 }
 .canvas-tool-label {
   position: absolute;
@@ -4898,4 +4874,12 @@ body.canvas-mode .canvas-workspace.agent-collapsed .canvas-agent-panel.collapsed
 }
 
 .result-ai-content { flex: 1; min-width: 0; }
-\n:root[data-theme="dark"] .canvas-tool-btn {\n  border-color: rgba(255, 255, 255, 0.08);\n  background: rgba(255, 255, 255, 0.04);\n}\n\n:root[data-theme="dark"] .canvas-tool-btn:hover,\n:root[data-theme="dark"] .canvas-tool-btn:focus-visible {\n  background: rgba(255, 255, 255, 0.1);\n}\n\n:root[data-theme="dark"] .canvas-tool-btn.canvas-action-btn .canvas-tool-icon {\n  background: rgba(255, 255, 255, 0.08);\n  color: rgba(255, 255, 255, 0.72);\n}\n\n:root[data-theme="dark"] .canvas-sidebar-divider {\n  background: rgba(255, 255, 255, 0.12);\n}\n
+
+:root[data-theme="dark"] .canvas-tool-btn {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+}
+:root[data-theme="dark"] .canvas-tool-btn:hover,
+:root[data-theme="dark"] .canvas-tool-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+}
