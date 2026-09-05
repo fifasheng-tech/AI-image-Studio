@@ -4074,6 +4074,11 @@ async function handleSubmit() {
   if (!prompt || state.isGenerating) return;
   const uploadedImages = state.uploadedImages.slice();
   const loading = addLoadingCard();
+  const startedAt = Date.now();
+  const progressTimer = window.setInterval(() => {
+    const node = loading.querySelector('.result-loading');
+    if (node) node.innerHTML = `<div class="spinner"></div>生成中... ${Math.round((Date.now() - startedAt) / 1000)}s`;
+  }, 1000);
   setGenerating(true);
   promptInput.value = '';
   resizePromptInput();
@@ -4111,6 +4116,7 @@ async function handleSubmit() {
     resizePromptInput();
     addErrorCard(error.message);
   } finally {
+    window.clearInterval(progressTimer);
     setGenerating(false);
     scrollToBottom();
   }
