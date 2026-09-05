@@ -811,8 +811,13 @@ function initialsFromText(value) {
 
 // --- Canvas Mode ---
 
+function isMobileViewport() {
+  return window.matchMedia?.('(max-width: 768px)')?.matches || window.innerWidth <= 768;
+}
+
 function setAppMode(mode) {
   state.appMode = ['chat', 'canvas', 'project'].includes(mode) ? mode : 'chat';
+  if (state.appMode === 'canvas' && isMobileViewport()) state.appMode = 'chat';
   localStorage.setItem('imageStudioMode', state.appMode);
   document.body.classList.toggle('chat-mode', state.appMode === 'chat');
   document.body.classList.toggle('canvas-mode', state.appMode === 'canvas');
@@ -825,6 +830,10 @@ function setAppMode(mode) {
   renderCanvasAgent();
   if (state.appMode === 'project') loadProjectAssets({ force: true });
 }
+
+window.addEventListener('resize', () => {
+  if (state.appMode === 'canvas' && isMobileViewport()) setAppMode('chat');
+});
 
 function addSessionUploads(files = []) {
   const images = files.filter(file => file?.type?.startsWith('image/'));
@@ -4063,8 +4072,48 @@ refreshLogsBtn.addEventListener('click', loadLogs);
 async function handleSubmit() {
   const prompt = promptInput.value.trim();
   if (!prompt || state.isGenerating) return;
+  const uploadedImages = state.uploadedImages.slice();
+  const loading = addLoadingCard();
+  setGenerating(true);
+  promptInput.value = '';
+  resizePromptInput();
+  closeDrawer();
 
-  await enterCanvasFromChat(prompt, { generate: true });
+  const formData = new FormData();
+  formData.append('prompt', withSizeLayoutInstruction(prompt, getSelectedSize()));
+  formData.append('mode', uploadedImages.length ? 'edit' : 'generate');
+  formData.append('provider', 'newapi-account');
+  formData.append('model', modelSelect.value.trim() || 'gpt-image-2');
+  formData.append('size', getSelectedSize());
+  formData.append('quality', qualitySelect.value);
+  formData.append('background', backgroundSelect.value);
+  formData.append('n', clampInputValue(nInput.value, 1, 4, 1));
+  formData.append('timeout', clampInputValue(timeoutInput.value, 30, 900, 600));
+  uploadedImages.forEach(file => formData.append('images', file));
+
+  try {
+    const response = await fetch(apiUrl('/api/generate'), {
+      method: 'POST',
+      headers: { 'x-newapi-uid': String(getNewApiUid() || '') },
+      body: formData,
+    });
+    const data = await response.json();
+    if (!response.ok || !data.ok) {
+      throw new Error(formatGenerateError(data));
+    }
+    loading.remove();
+    addResultCards(data.outputFiles || []);
+    clearAttachments();
+    invalidateProjectAssets();
+  } catch (error) {
+    loading.remove();
+    promptInput.value = prompt;
+    resizePromptInput();
+    addErrorCard(error.message);
+  } finally {
+    setGenerating(false);
+    scrollToBottom();
+  }
 }
 
 async function enterCanvasFromChat(prompt, options = {}) {

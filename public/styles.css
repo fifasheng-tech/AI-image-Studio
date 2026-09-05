@@ -438,6 +438,10 @@ body.canvas-mode .canvas-workspace {
   display: grid;
 }
 
+body.project-mode .project-workspace {
+  display: block;
+}
+
 /* Canvas left rail: compact, aligned Apple-style tools */
 .canvas-workspace {
   display: none;
@@ -3974,6 +3978,7 @@ body.chat-mode .composer-reference-tile:hover {
 
 /* Responsive */
 @media (max-width: 768px) {
+  #canvasModeBtn { display: none; }
   .composer { max-width: 100%; width: calc(100% - 16px); bottom: 8px; }
   body.chat-mode .composer {
     width: calc(100% - 24px);
