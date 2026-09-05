@@ -3978,7 +3978,11 @@ body.chat-mode .composer-reference-tile:hover {
 
 /* Responsive */
 @media (max-width: 768px) {
-  #canvasModeBtn { display: none; }
+  #canvasModeBtn,
+  #composerPlanBtn,
+  [data-chat-canvas-edit],
+  [data-project-import],
+  #projectPreviewImportBtn { display: none !important; }
   .composer { max-width: 100%; width: calc(100% - 16px); bottom: 8px; }
   body.chat-mode .composer {
     width: calc(100% - 24px);
